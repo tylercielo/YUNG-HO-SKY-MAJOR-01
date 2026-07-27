@@ -938,7 +938,8 @@ function initBackup(){
     let raw=document.getElementById('bkText').value.trim();
     if(!raw){ flashMsg('Paste a backup code first'); return; }
     try{
-      if(raw.startsWith('SLOWBUILD1:')) raw=raw.slice('SLOWBUILD1:'.length);
+      // strip the prefix regardless of case/spacing, and remove any stray whitespace/newlines
+      raw=raw.replace(/^\s*slowbuild1\s*:\s*/i,'').replace(/\s+/g,'');
       const data=JSON.parse(decodeURIComponent(escape(atob(raw))));
       if(typeof data!=='object'||!data) throw new Error('bad');
       S=data;
