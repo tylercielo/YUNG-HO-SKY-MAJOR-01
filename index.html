@@ -822,18 +822,29 @@ function renderTrend(){
 
   const c=document.getElementById('chart');
   if(!n){ c.innerHTML='<div class="empty">No weigh-ins yet.<br>The line needs about two weeks before it means anything.</div>'; renderHist(); return; }
-  const Wd=520,H=230,pl=36,pr=14,pt=14,pb=26;
+  const Wd=520,H=238,pl=36,pr=16,pt=14,pb=34;
   const xs=S.weights.map(w=>dn(w.date));
-  const minX=Math.min(...xs), maxX=Math.max(Math.max(...xs), minX+30);
+  const firstX=Math.min(...xs), lastX=Math.max(...xs);
+  const dataSpan=lastX-firstX;
+  // window grows with your data but never crams the early dots: min ~8 days wide, with breathing room on both sides
+  const windowDays=Math.max(dataSpan,8);
+  const padL=Math.max(windowDays*0.06,0.5), padR=Math.max(windowDays*0.12,1.5);
+  const minX=firstX-padL, maxX=firstX+windowDays+padR;
   const ys=S.weights.map(w=>w.weight).concat([GOAL,START]);
   const minY=Math.min(...ys)-2, maxY=Math.max(...ys)+2;
   const px=x=>pl+((x-minX)/(maxX-minX||1))*(Wd-pl-pr);
   const py=y=>pt+(1-(y-minY)/(maxY-minY||1))*(H-pt-pb);
+  const dayToLabel=dnum=>new Date(dnum*864e5).toLocaleDateString(undefined,{month:'short',day:'numeric',timeZone:'UTC'});
   let g='';
   g+=`<line x1="${pl}" y1="${py(GOAL)}" x2="${Wd-pr}" y2="${py(GOAL)}" stroke="#ADDFFF" stroke-width="2" stroke-dasharray="5 5" opacity=".8"/>`;
   g+=`<text x="${Wd-pr}" y="${py(GOAL)-6}" fill="#ADDFFF" font-size="10.5" text-anchor="end" font-family="Space Mono">205</text>`;
   g+=`<line x1="${pl}" y1="${py(START)}" x2="${Wd-pr}" y2="${py(START)}" stroke="#2f568c" stroke-width="1" stroke-dasharray="2 4"/>`;
   for(let i=0;i<=3;i++){const v=minY+(maxY-minY)*i/3;g+=`<text x="${pl-7}" y="${py(v)+3.5}" fill="#6a89ab" font-size="9.5" text-anchor="end" font-family="Space Mono">${v.toFixed(0)}</text>`;}
+  // x-axis date labels: one per weigh-in when few, otherwise ~5 evenly spaced
+  let ticks;
+  if(S.weights.length<=6){ ticks=[...new Set(xs)]; }
+  else { ticks=[]; for(let i=0;i<=4;i++) ticks.push(Math.round(firstX+(lastX-firstX)*i/4)); ticks=[...new Set(ticks)]; }
+  ticks.forEach(t=>{ g+=`<text x="${px(t)}" y="${H-8}" fill="#6a89ab" font-size="9" text-anchor="middle" font-family="Space Mono">${dayToLabel(t)}</text>`; });
   S.weights.forEach(w=>{g+=`<circle cx="${px(dn(w.date))}" cy="${py(w.weight)}" r="3" fill="#6a89ab"/>`;});
   if(tp.length>1){
     g+=`<path d="${tp.map((p,i)=>(i?'L':'M')+px(p.x)+' '+py(p.y)).join(' ')}" fill="none" stroke="#FFEE8C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
