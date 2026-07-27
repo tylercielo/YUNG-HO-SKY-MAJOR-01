@@ -138,6 +138,21 @@
   .ee-form input:focus,.ee-form textarea:focus{outline:2px solid var(--flare);outline-offset:1px;}
   .ee-form .ef-save{background:var(--flare);color:var(--void);border:none;border-radius:10px;padding:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk';font-size:14px;}
   .addex{margin-top:14px;width:100%;background:none;border:1px dashed var(--flare);color:var(--flare);border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Space Grotesk';}
+  .bkrow{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
+  .bkbtn{width:100%;background:var(--flare);color:var(--void);border:none;border-radius:12px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Space Grotesk';}
+  .bkbtn.alt{background:none;border:1px solid var(--edge);color:var(--steel);}
+  .bkbtn.alt:hover{border-color:var(--flare);color:var(--flare);}
+  .bkbtn.warn{background:none;border:1px solid var(--flare);color:var(--flare);margin-top:9px;}
+  .saved{font-size:12.5px;color:var(--volt);height:16px;margin-top:9px;opacity:0;transition:.3s;text-align:center;}
+  .saved.show{opacity:1;}
+  .bkimport{display:none;margin-top:12px;}
+  .bkimport.show{display:block;}
+  .bkimport textarea{width:100%;background:var(--void);border:1px solid var(--edge);color:var(--paper);border-radius:12px;padding:12px;font-family:'Space Mono',monospace;font-size:12px;resize:vertical;min-height:90px;}
+  .bkimport textarea:focus{outline:2px solid var(--flare);outline-offset:1px;}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--volt);color:var(--void);
+    font-family:'Space Grotesk';font-weight:700;font-size:13px;padding:9px 18px;border-radius:999px;opacity:0;pointer-events:none;
+    transition:opacity .2s, transform .2s;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.35);}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .rulebox b{color:var(--flare);}
 
   /* ===== FUEL ===== */
@@ -298,11 +313,12 @@
       </div>
 
       <div class="addrow">
-        <input class="f" id="fName" placeholder="Anything else">
+        <input class="f" id="fName" placeholder="Anything else" list="foodList" autocomplete="off">
         <input class="c" id="fCal" type="number" inputmode="numeric" placeholder="cal">
         <input class="p" id="fPro" type="number" inputmode="numeric" placeholder="pro">
         <button id="fAdd">Add</button>
       </div>
+      <datalist id="foodList"></datalist>
 
       <div class="foods" id="foods"></div>
     </div>
@@ -346,6 +362,21 @@
       </div>
       <div id="history"></div>
     </div>
+
+    <div class="card">
+      <div class="eyebrow">Backup</div>
+      <h2>Never lose your log</h2>
+      <div class="sub">Your data lives on this phone only. Back it up here — copy the code and paste it into Notes or email it to yourself. To move it to another device (or recover it), paste the code into Restore. Do this every couple weeks.</div>
+      <div class="bkrow">
+        <button class="bkbtn" id="bkExport">📋 Copy my backup</button>
+        <button class="bkbtn alt" id="bkImportToggle">Restore from a backup</button>
+      </div>
+      <div class="saved" id="bkMsg"></div>
+      <div class="bkimport" id="bkImport">
+        <textarea id="bkText" placeholder="Paste your backup code here…"></textarea>
+        <button class="bkbtn warn" id="bkRestore">Restore this data (replaces what's here)</button>
+      </div>
+    </div>
   </div>
 
   <div class="foot">
@@ -377,6 +408,8 @@ async function load(){
     });
   });
   if(!Array.isArray(S.quick)) S.quick=DEFAULT_QUICK.slice();
+  S.foodMemory=S.foodMemory||{};
+  Object.values(S.food||{}).forEach(list=>(list||[]).forEach(x=>{ if(x&&x.n) S.foodMemory[x.n.toLowerCase()]={n:x.n,c:x.c||0,p:x.p||0}; }));
   if(!Array.isArray(S.workouts)||!S.workouts.length) S.workouts=JSON.parse(JSON.stringify(DEFAULT_W));
   if(!S.workouts.find(d=>d.id===day)) day=S.workouts[0].id;
   boot();
@@ -386,7 +419,15 @@ async function save(){
     const j=JSON.stringify(S);
     if(window.storage) await window.storage.set(KEY,j);
     else localStorage.setItem(KEY,j);
+    toast();
   }catch(e){}
+}
+let toastTimer;
+function toast(){
+  let t=document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; t.textContent='saved ✓'; document.body.appendChild(t); }
+  t.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1100);
 }
 const tk=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 
@@ -691,15 +732,40 @@ document.getElementById('sAdd').addEventListener('click',()=>{
 function addFood(n,c,p){
   const d=tk(); S.food[d]=S.food[d]||[];
   S.food[d].push({n,c:c||0,p:p||0});
-  save(); renderFuel();
+  // remember this food's macros for autofill next time
+  S.foodMemory=S.foodMemory||{};
+  S.foodMemory[n.toLowerCase()]={n,c:c||0,p:p||0};
+  save(); renderFuel(); refreshFoodList();
 }
+// every food we know: saved staples + anything logged before
+function knownFoods(){
+  const map={};
+  (S.quick||[]).forEach(q=>{ map[q.n.toLowerCase()]={n:q.n,c:q.c||0,p:q.p||0}; });
+  Object.values(S.foodMemory||{}).forEach(f=>{ map[f.n.toLowerCase()]={n:f.n,c:f.c||0,p:f.p||0}; });
+  return map;
+}
+function refreshFoodList(){
+  const dl=document.getElementById('foodList'); if(!dl) return;
+  const foods=Object.values(knownFoods()).sort((a,b)=>a.n.localeCompare(b.n));
+  dl.innerHTML=foods.map(f=>`<option value="${f.n.replace(/"/g,'&quot;')}">${f.c} cal · ${f.p}p</option>`).join('');
+}
+// when the typed name matches a known food, autofill its numbers (and leave them in the boxes)
+document.getElementById('fName').addEventListener('input',()=>{
+  const n=document.getElementById('fName').value.trim().toLowerCase();
+  const hit=knownFoods()[n];
+  if(hit){
+    document.getElementById('fCal').value=hit.c;
+    document.getElementById('fPro').value=hit.p;
+  }
+});
 document.getElementById('fAdd').addEventListener('click',()=>{
   const n=document.getElementById('fName').value.trim();
   const c=parseInt(document.getElementById('fCal').value)||0;
   const p=parseInt(document.getElementById('fPro').value)||0;
   if(!n||(!c&&!p)) return;
   addFood(n,c,p);
-  document.getElementById('fName').value='';document.getElementById('fCal').value='';document.getElementById('fPro').value='';
+  // clear the name for the next entry, but leave the numbers visible as confirmation of what was just logged
+  document.getElementById('fName').value='';
 });
 function renderFuel(){
   const list=S.food[tk()]||[];
@@ -788,8 +854,17 @@ function renderHist(){
 
 /* ================= LOG / HISTORY ================= */
 function fmtTime(iso){
-  try{ return new Date(iso).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }
-  catch(e){ return ''; }
+  if(!iso) return '';
+  const d=new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+// pull the earliest logged timestamp from a session's sets (entries no longer carry .at)
+function sessionTime(s){
+  for(const e of (s.entries||[])){
+    for(const set of (e.sets||[])){ if(set&&set.at) return set.at; }
+  }
+  return s.at||'';
 }
 function renderHistory(){
   const el=document.getElementById('history');
@@ -814,7 +889,7 @@ function renderHistory(){
     const mLabel=dt.toLocaleDateString(undefined,{month:'long',year:'numeric'});
     if(mLabel!==lastMonth){ out+=`<div class="month">${mLabel}</div>`; lastMonth=mLabel; }
     const dLabel=dt.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-    const t=s.entries.length?fmtTime(s.entries[0].at):'';
+    const t=fmtTime(sessionTime(s));
     out+=`<div class="sess">
       <div class="sh">
         <span class="sd">${dLabel}</span>
@@ -839,7 +914,44 @@ function tickClock(){
 }
 setInterval(tickClock,30000);
 
-function boot(){ initEditToggle(); tickClock(); renderDays(); renderEx(); renderQuick(); renderFuel(); renderTrend(); renderHistory(); }
+/* ===== BACKUP / RESTORE ===== */
+function flashMsg(txt){ const m=document.getElementById('bkMsg'); m.textContent=txt; m.classList.add('show'); setTimeout(()=>m.classList.remove('show'),2200); }
+function initBackup(){
+  document.getElementById('bkExport').addEventListener('click',async()=>{
+    const code='SLOWBUILD1:'+btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+    let copied=false;
+    try{ await navigator.clipboard.writeText(code); copied=true; }catch(e){}
+    if(!copied){
+      // fallback: drop it in the import box so it can be selected/copied manually
+      const t=document.getElementById('bkText'); document.getElementById('bkImport').classList.add('show'); t.value=code; t.focus(); t.select();
+      flashMsg('Copy the code shown below ↓');
+    } else flashMsg('Backup copied ✓ — paste it somewhere safe');
+  });
+  document.getElementById('bkImportToggle').addEventListener('click',()=>{
+    document.getElementById('bkImport').classList.toggle('show');
+    if(document.getElementById('bkImport').classList.contains('show')) document.getElementById('bkText').focus();
+  });
+  document.getElementById('bkRestore').addEventListener('click',()=>{
+    let raw=document.getElementById('bkText').value.trim();
+    if(!raw){ flashMsg('Paste a backup code first'); return; }
+    try{
+      if(raw.startsWith('SLOWBUILD1:')) raw=raw.slice('SLOWBUILD1:'.length);
+      const data=JSON.parse(decodeURIComponent(escape(atob(raw))));
+      if(typeof data!=='object'||!data) throw new Error('bad');
+      S=data;
+      S.food=S.food||{}; S.weights=S.weights||[]; S.sessions=S.sessions||[];
+      if(!Array.isArray(S.quick)) S.quick=DEFAULT_QUICK.slice();
+      if(!Array.isArray(S.workouts)||!S.workouts.length) S.workouts=JSON.parse(JSON.stringify(DEFAULT_W));
+      if(!S.workouts.find(d=>d.id===day)) day=S.workouts[0].id;
+      save();
+      renderDays(); renderEx(); renderQuick(); renderFuel(); renderTrend(); renderHistory();
+      document.getElementById('bkText').value=''; document.getElementById('bkImport').classList.remove('show');
+      flashMsg('Restored ✓ — all your data is back');
+    }catch(e){ flashMsg('That code didn\'t read right — check you pasted all of it'); }
+  });
+}
+
+function boot(){ initEditToggle(); initBackup(); tickClock(); renderDays(); renderEx(); renderQuick(); renderFuel(); refreshFoodList(); renderTrend(); renderHistory(); }
 load();
 </script>
 </body>
