@@ -16,12 +16,12 @@
     --deck:#1a3a5e;
     --deck-2:#21467a;
     --edge:#2f568c;
-    --flare:#f79256;
-    --volt:#7dcfb6;
+    --flare:#FFEE8C;
+    --volt:#ADDFFF;
     --steel:#a9c2dc;
     --dim:#6a89ab;
     --paper:#eef4fb;
-    --teal:#00b2ca;
+    --teal:#ADDFFF;
     --peach:#fbd1a2;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -30,7 +30,7 @@
     background:var(--void);color:var(--paper);
     font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.5;
     max-width:600px;margin:0 auto;padding:0 0 60px;min-height:100vh;
-    background-image:radial-gradient(120% 50% at 50% 0%, rgba(247,146,86,0.10), transparent 60%);
+    background-image:radial-gradient(120% 50% at 50% 0%, rgba(255,238,140,0.10), transparent 60%);
   }
   .wrap{padding:0 16px;}
   .serif{font-family:'Instrument Serif',serif;font-weight:400;}
@@ -79,8 +79,8 @@
     background:var(--deck-2);border:1px solid var(--edge);}
   .beat .lab{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);}
   .beat .val{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--steel);margin-left:auto;}
-  .beat.fresh{border-color:var(--volt);background:rgba(125,207,182,0.08);}
-  .beat.fresh .val{color:var(--volt);}
+  .beat.fresh{border-color:var(--teal);background:rgba(173,223,255,0.10);}
+  .beat.fresh .val{color:var(--teal);}
   .beat.empty .val{color:var(--dim);font-size:13px;}
 
   .logbtn{margin-top:9px;background:none;border:1px solid var(--edge);color:var(--flare);border-radius:10px;
@@ -94,7 +94,7 @@
     cursor:pointer;transition:.12s;}
   .vchip.on{background:var(--volt);border-color:var(--volt);color:var(--void);font-weight:700;}
   .setrow .sv .tag{font-family:'Space Mono',monospace;font-size:10px;color:var(--volt);
-    border:1px solid rgba(125,207,182,0.4);border-radius:4px;padding:1px 5px;letter-spacing:.06em;text-transform:uppercase;}
+    border:1px solid rgba(173,223,255,0.4);border-radius:4px;padding:1px 5px;letter-spacing:.06em;text-transform:uppercase;}
 
   .inputs{display:none;margin-top:9px;}
   .inputs input{flex:1;min-width:0;background:var(--void);border:1px solid var(--edge);color:var(--paper);
@@ -110,7 +110,7 @@
   .setrow .sd{background:none;border:none;color:var(--dim);cursor:pointer;margin-left:auto;padding:2px 4px;font-size:12px;}
   .setrow .sd:hover{color:var(--flare);}
 
-  .rulebox{margin-top:14px;padding:14px;border-radius:13px;background:rgba(247,146,86,0.07);border:1px solid rgba(247,146,86,0.28);font-size:13.5px;}
+  .rulebox{margin-top:14px;padding:14px;border-radius:13px;background:rgba(255,238,140,0.07);border:1px solid rgba(255,238,140,0.28);font-size:13.5px;}
   .trainhead{display:flex;align-items:center;justify-content:space-between;}
   .editbtn{background:none;border:none;color:var(--dim);font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:2px 4px;font-weight:700;transition:.15s;}
   .editbtn.on{color:var(--flare);}
@@ -183,7 +183,7 @@
   .chip small{color:var(--dim);font-family:'Space Mono';font-size:10px;margin-left:4px;}
   .chip .del{color:var(--flare);margin-left:8px;font-family:'Space Mono';font-size:11px;}
   .chip.new{border-style:dashed;border-color:var(--flare);color:var(--flare);}
-  .chip.new:hover{background:rgba(247,146,86,0.1);color:var(--flare);border-color:var(--flare);}
+  .chip.new:hover{background:rgba(255,238,140,0.1);color:var(--flare);border-color:var(--flare);}
   .staple{display:none;gap:7px;margin-top:10px;}
   .staple.show{display:flex;}
   .staple input{background:var(--void);border:1px solid var(--edge);color:var(--paper);border-radius:11px;
@@ -345,8 +345,8 @@
       <div id="chart"></div>
       <div class="leg">
         <span><i style="width:7px;height:7px;border-radius:50%;background:#6a89ab;"></i>daily</span>
-        <span><i style="width:15px;height:3px;background:#f79256;border-radius:3px;"></i>trend</span>
-        <span><i style="width:15px;border-top:2px dashed #7dcfb6;"></i>205 goal</span>
+        <span><i style="width:15px;height:3px;background:#FFEE8C;border-radius:3px;"></i>trend</span>
+        <span><i style="width:15px;border-top:2px dashed #ADDFFF;"></i>205 goal</span>
       </div>
       <div class="hist" id="hist"></div>
     </div>
@@ -830,15 +830,15 @@ function renderTrend(){
   const px=x=>pl+((x-minX)/(maxX-minX||1))*(Wd-pl-pr);
   const py=y=>pt+(1-(y-minY)/(maxY-minY||1))*(H-pt-pb);
   let g='';
-  g+=`<line x1="${pl}" y1="${py(GOAL)}" x2="${Wd-pr}" y2="${py(GOAL)}" stroke="#7dcfb6" stroke-width="2" stroke-dasharray="5 5" opacity=".75"/>`;
-  g+=`<text x="${Wd-pr}" y="${py(GOAL)-6}" fill="#7dcfb6" font-size="10.5" text-anchor="end" font-family="Space Mono">205</text>`;
+  g+=`<line x1="${pl}" y1="${py(GOAL)}" x2="${Wd-pr}" y2="${py(GOAL)}" stroke="#ADDFFF" stroke-width="2" stroke-dasharray="5 5" opacity=".8"/>`;
+  g+=`<text x="${Wd-pr}" y="${py(GOAL)-6}" fill="#ADDFFF" font-size="10.5" text-anchor="end" font-family="Space Mono">205</text>`;
   g+=`<line x1="${pl}" y1="${py(START)}" x2="${Wd-pr}" y2="${py(START)}" stroke="#2f568c" stroke-width="1" stroke-dasharray="2 4"/>`;
   for(let i=0;i<=3;i++){const v=minY+(maxY-minY)*i/3;g+=`<text x="${pl-7}" y="${py(v)+3.5}" fill="#6a89ab" font-size="9.5" text-anchor="end" font-family="Space Mono">${v.toFixed(0)}</text>`;}
   S.weights.forEach(w=>{g+=`<circle cx="${px(dn(w.date))}" cy="${py(w.weight)}" r="3" fill="#6a89ab"/>`;});
   if(tp.length>1){
-    g+=`<path d="${tp.map((p,i)=>(i?'L':'M')+px(p.x)+' '+py(p.y)).join(' ')}" fill="none" stroke="#f79256" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    g+=`<path d="${tp.map((p,i)=>(i?'L':'M')+px(p.x)+' '+py(p.y)).join(' ')}" fill="none" stroke="#FFEE8C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
   }
-  if(tp.length) g+=`<circle cx="${px(tp[tp.length-1].x)}" cy="${py(tp[tp.length-1].y)}" r="5" fill="#f79256" stroke="#12263f" stroke-width="2"/>`;
+  if(tp.length) g+=`<circle cx="${px(tp[tp.length-1].x)}" cy="${py(tp[tp.length-1].y)}" r="5" fill="#FFEE8C" stroke="#12263f" stroke-width="2"/>`;
   c.innerHTML=`<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="weight trend">${g}</svg>`;
   renderHist();
 }
