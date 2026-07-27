@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>195 → 205 · The Slow Build</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -231,17 +234,17 @@
 
   .month{font-family:'Instrument Serif',serif;font-size:19px;color:var(--steel);margin:22px 0 6px;
     padding-bottom:6px;border-bottom:1px solid var(--edge);}
-  .sess{background:var(--deck-2);border:1px solid var(--edge);border-radius:14px;padding:13px 14px;margin-top:9px;}
+  .sess{background:var(--deck-2);border:1px solid var(--edge);border-radius:14px;padding:13px 14px;margin-top:9px;overflow:hidden;}
   .sess .sh{display:flex;align-items:baseline;gap:8px;}
-  .sess .sd{font-weight:700;font-size:14.5px;}
+  .sess .sd{font-weight:700;font-size:14.5px;overflow-wrap:anywhere;}
   .sess .sday{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
     color:var(--void);background:var(--flare);border-radius:5px;padding:2px 6px;}
   .sess .stime{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-left:auto;}
   .sess .sx{background:none;border:none;color:var(--dim);cursor:pointer;padding:0 0 0 8px;font-size:13px;}
   .sess .sx:hover{color:var(--flare);}
-  .sess .er{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0 0;}
-  .sess .er .en{color:var(--steel);}
-  .sess .er .ev{font-family:'Space Mono',monospace;font-size:12.5px;white-space:nowrap;}
+  .sess .er{display:flex;flex-direction:column;gap:2px;font-size:13px;padding:8px 0 0;min-width:0;}
+  .sess .er .en{color:var(--steel);font-weight:600;}
+  .sess .er .ev{font-family:'Space Mono',monospace;font-size:12.5px;white-space:normal;overflow-wrap:anywhere;color:var(--paper);}
 
   .foot{text-align:center;color:var(--dim);font-size:12.5px;margin-top:26px;line-height:1.7;padding:0 10px;}
   .foot b{color:var(--steel);}
