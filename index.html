@@ -209,6 +209,25 @@
   .food .m b{color:var(--volt);font-weight:700;}
   .food .rm{background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px;padding:2px 5px;}
   .food .rm:hover{color:var(--flare);}
+  .food .star{background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px;padding:2px 4px;line-height:1;transition:.12s;}
+  .food .star:hover{color:var(--flare);}
+  .food .star.is{color:var(--flare);opacity:.5;cursor:default;}
+
+  /* goal history heatmap */
+  .goalsec{margin-top:24px;padding-top:20px;border-top:1px solid var(--edge);}
+  .heat{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:14px;}
+  .heat .cell{aspect-ratio:1;border-radius:5px;cursor:pointer;border:1px solid transparent;padding:0;transition:transform .1s;}
+  .heat .cell:hover{transform:scale(1.12);}
+  .heat .cell.today{outline:2px solid var(--paper);outline-offset:1px;}
+  .cell.g-both,.sw.g-both{background:var(--flare);}
+  .cell.g-part,.sw.g-part{background:var(--volt);}
+  .cell.g-miss,.sw.g-miss{background:var(--edge);}
+  .cell.g-none,.sw.g-none{background:var(--void);border:1px solid var(--edge);}
+  .heatleg{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin-top:13px;font-size:10.5px;color:var(--dim);font-family:'Space Mono',monospace;}
+  .heatleg .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px;}
+  .goaldetail{margin-top:13px;text-align:center;font-family:'Space Mono',monospace;font-size:12.5px;color:var(--steel);min-height:18px;}
+  .goaldetail b{color:var(--volt);}
+  .goaldetail .miss{color:var(--dim);}
 
   /* ===== TREND ===== */
   .wrow{display:flex;gap:9px;margin-top:14px;}
@@ -324,6 +343,19 @@
       <datalist id="foodList"></datalist>
 
       <div class="foods" id="foods"></div>
+
+      <div class="goalsec">
+        <div class="qhead"><span class="eyebrow">Goal history · last 30 days</span></div>
+        <div class="stats" id="goalStats"></div>
+        <div class="heat" id="goals"></div>
+        <div class="heatleg">
+          <span><i class="sw g-both"></i>both hit</span>
+          <span><i class="sw g-part"></i>one hit</span>
+          <span><i class="sw g-miss"></i>logged, missed</span>
+          <span><i class="sw g-none"></i>no log</span>
+        </div>
+        <div class="goaldetail" id="goalDetail">Tap a day to see its numbers.</div>
+      </div>
     </div>
   </div>
 
@@ -590,7 +622,7 @@ function renderEx(){
     const mine=todaySets(e.id), prev=lastSets(e.id);
     const val = prev ? setStr(prev) : 'first time — set the bar';
     const rows = mine.length ? `<div class="setlist">${mine.map((s,i)=>
-      `<div class="setrow"><span class="sn">${i+1}</span><span class="sv">${s.t?`<b class="tag">${s.t}</b> `:''}${s.w} lb × ${s.r}</span><button class="sd" data-id="${e.id}" data-i="${i}">✕</button></div>`
+      `<div class="setrow"><span class="sn">${i+1}</span><span class="sv">${s.t?`<b class="tag">${s.t}</b> `:''}${s.w==='BW'?'BW':s.w+' lb'} × ${s.r}</span><button class="sd" data-id="${e.id}" data-i="${i}">✕</button></div>`
     ).join('')}</div>` : '';
     const varRow = e.v ? `<div class="vars" data-id="${e.id}">${e.v.map((o,i)=>
       `<button class="vchip ${i===0?'on':''}" data-id="${e.id}" data-v="${o}">${o}</button>`).join('')}</div>` : '';
@@ -605,7 +637,7 @@ function renderEx(){
       <div class="inputs" data-id="${e.id}">
         ${varRow}
         <div class="inrow">
-          <input class="w" type="number" inputmode="decimal" placeholder="lb">
+          <input class="w" type="number" inputmode="decimal" placeholder="lb or blank">
           <span class="x">×</span>
           <input class="r" type="number" inputmode="numeric" placeholder="reps">
           <button class="go">Add</button>
@@ -651,8 +683,12 @@ function addExercise(nm,pr,cue){
 
 function addSet(box){
   const wEl=box.querySelector('.w'), rEl=box.querySelector('.r');
-  const w=parseFloat(wEl.value), r=parseInt(rEl.value);
-  if(!w||!r){ wEl.focus(); return; }
+  const wRaw=wEl.value.trim();
+  const r=parseInt(rEl.value);
+  if(!r){ rEl.focus(); return; }
+  // blank weight = bodyweight; otherwise it has to be a real number
+  const w = wRaw==='' ? 'BW' : parseFloat(wRaw);
+  if(w!=='BW' && !(w>0)){ wEl.focus(); return; }
   const id=box.dataset.id;
   const ex=dayObj().ex.find(e=>e.id===id);
   const tag = ex&&ex.v ? (sel[id]||ex.v[0]) : null;
@@ -662,7 +698,7 @@ function addSet(box){
   const reopened=document.querySelector(`.inputs[data-id="${id}"]`);
   if(reopened){
     reopened.classList.add('show');
-    reopened.querySelector('.w').value=w;
+    reopened.querySelector('.w').value = (w==='BW'?'':w);
     if(tag) reopened.querySelectorAll(`.vchip[data-id="${id}"]`).forEach(x=>x.classList.toggle('on',x.dataset.v===tag));
     reopened.querySelector('.r').focus();
   }
@@ -767,8 +803,11 @@ document.getElementById('fAdd').addEventListener('click',()=>{
   const p=parseInt(document.getElementById('fPro').value)||0;
   if(!n||(!c&&!p)) return;
   addFood(n,c,p);
-  // clear the name for the next entry, but leave the numbers visible as confirmation of what was just logged
+  // wipe all three boxes so the next entry starts clean
   document.getElementById('fName').value='';
+  document.getElementById('fCal').value='';
+  document.getElementById('fPro').value='';
+  document.getElementById('fName').focus();
 });
 function renderFuel(){
   const list=S.food[tk()]||[];
@@ -777,12 +816,58 @@ function renderFuel(){
   document.getElementById('proNow').textContent=tp;
   document.getElementById('calBar').style.width=Math.min(100,tc/CAL*100)+'%';
   document.getElementById('proBar').style.width=Math.min(100,tp/PRO*100)+'%';
+  const isStaple=nm=>(S.quick||[]).some(q=>q.n.toLowerCase()===nm.toLowerCase());
   const f=document.getElementById('foods');
   f.innerHTML = list.length
-    ? list.map((x,i)=>`<div class="food"><span class="n">${x.n}</span><span class="m">${x.c} cal · <b>${x.p}p</b></span><button class="rm" data-i="${i}">✕</button></div>`).join('')
+    ? list.map((x,i)=>{
+        const st=isStaple(x.n);
+        return `<div class="food"><span class="n">${x.n}</span><span class="m">${x.c} cal · <b>${x.p}p</b></span><button class="star ${st?'is':''}" data-i="${i}" title="${st?'Already a staple':'Save as a staple'}">${st?'★':'☆'}</button><button class="rm" data-i="${i}">✕</button></div>`;
+      }).join('')
     : '<div class="empty">Nothing logged today.<br>Tap a staple above or type anything in.</div>';
+  f.querySelectorAll('.star:not(.is)').forEach(b=>b.addEventListener('click',()=>{
+    const x=list[+b.dataset.i]; if(!x) return;
+    if(isStaple(x.n)) return; // don't double-add
+    S.quick.push({n:x.n,c:x.c||0,p:x.p||0});
+    save(); renderQuick(); renderFuel();
+  }));
   f.querySelectorAll('.rm').forEach(b=>b.addEventListener('click',()=>{
     S.food[tk()].splice(b.dataset.i,1); save(); renderFuel();
+  }));
+  renderGoals();
+}
+
+/* goal history: colour each of the last 30 days by whether it hit protein / calories */
+function dayTotals(list){
+  const tc=(list||[]).reduce((a,b)=>a+(b.c||0),0), tp=(list||[]).reduce((a,b)=>a+(b.p||0),0);
+  return {tc,tp,cal:tc>=CAL,pro:tp>=PRO,logged:(list||[]).length>0};
+}
+function renderGoals(){
+  const grid=document.getElementById('goals'); if(!grid) return;
+  const N=30, today=new Date(), todayKeyStr=tk(), days=[];
+  for(let k=N-1;k>=0;k--){
+    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-k);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    days.push({d,key,st:dayTotals(S.food[key])});
+  }
+  const proDays=days.filter(x=>x.st.pro).length;
+  const calDays=days.filter(x=>x.st.cal).length;
+  const bothDays=days.filter(x=>x.st.pro&&x.st.cal).length;
+  document.getElementById('goalStats').innerHTML=
+    `<div class="st"><div class="v">${bothDays}</div><div class="l">both hit</div></div>`+
+    `<div class="st"><div class="v">${proDays}</div><div class="l">protein days</div></div>`+
+    `<div class="st"><div class="v">${calDays}</div><div class="l">calorie days</div></div>`;
+  grid.innerHTML=days.map((x,i)=>{
+    const cls = x.st.pro&&x.st.cal ? 'g-both' : (x.st.pro||x.st.cal ? 'g-part' : (x.st.logged ? 'g-miss':'g-none'));
+    const t = x.key===todayKeyStr ? ' today' : '';
+    return `<button class="cell ${cls}${t}" data-i="${i}"></button>`;
+  }).join('');
+  const detail=document.getElementById('goalDetail');
+  grid.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
+    const x=days[+b.dataset.i];
+    const lbl=x.d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+    if(!x.st.logged){ detail.innerHTML=`${lbl} · <span class="miss">nothing logged</span>`; return; }
+    const pMark=x.st.pro?'✓':'✕', cMark=x.st.cal?'✓':'✕';
+    detail.innerHTML=`${lbl} · ${x.st.tc.toLocaleString()} cal ${cMark} · <b>${x.st.tp}p ${pMark}</b>`;
   }));
 }
 
