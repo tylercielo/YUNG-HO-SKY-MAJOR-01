@@ -395,6 +395,18 @@
         <div class="st"><div class="v" id="hMonth">0</div><div class="l">this month</div></div>
         <div class="st"><div class="v" id="hLast">–</div><div class="l">days since</div></div>
       </div>
+
+      <div class="goalsec">
+        <div class="qhead"><span class="eyebrow">Workout days · last 30 days</span></div>
+        <div class="stats" id="wdStats"></div>
+        <div class="heat" id="wdGrid"></div>
+        <div class="heatleg">
+          <span><i class="sw g-both"></i>trained</span>
+          <span><i class="sw g-none"></i>rest / off</span>
+        </div>
+        <div class="goaldetail" id="wdDetail">Tap a day to see what you trained.</div>
+      </div>
+
       <div id="history"></div>
     </div>
 
@@ -967,6 +979,7 @@ function sessionTime(s){
 }
 function renderHistory(){
   const el=document.getElementById('history');
+  renderWorkoutDays();
   const list=[...S.sessions].sort((a,b)=> b.date.localeCompare(a.date) || (b.entries[0]?.at||'').localeCompare(a.entries[0]?.at||''));
   const now=new Date(), ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('hTotal').textContent=list.length;
@@ -1002,6 +1015,36 @@ function renderHistory(){
   el.innerHTML=out;
   el.querySelectorAll('.sx').forEach(b=>b.addEventListener('click',()=>{
     S.sessions=S.sessions.filter(x=>x.key!==b.dataset.k); save(); renderHistory();
+  }));
+}
+
+function renderWorkoutDays(){
+  const grid=document.getElementById('wdGrid'); if(!grid) return;
+  const N=30, today=new Date(), todayStr=tk(), days=[];
+  for(let k=N-1;k>=0;k--){
+    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-k);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const sess=(S.sessions||[]).filter(s=>s.date===key);
+    days.push({d,key,sess,trained:sess.length>0});
+  }
+  const trained=days.filter(x=>x.trained).length;
+  const perWeek=(trained/N*7).toFixed(1);
+  document.getElementById('wdStats').innerHTML=
+    `<div class="st"><div class="v">${trained}</div><div class="l">days trained</div></div>`+
+    `<div class="st"><div class="v">${perWeek}</div><div class="l">per week</div></div>`;
+  grid.innerHTML=days.map((x,i)=>{
+    const cls = x.trained ? 'g-both' : 'g-none';
+    const t = x.key===todayStr ? ' today' : '';
+    return `<button class="cell ${cls}${t}" data-i="${i}"></button>`;
+  }).join('');
+  const detail=document.getElementById('wdDetail');
+  grid.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
+    const x=days[+b.dataset.i];
+    const lbl=x.d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+    if(!x.trained){ detail.innerHTML=`${lbl} · <span class="miss">rest / off</span>`; return; }
+    const labels=[...new Set(x.sess.map(s=>(S.workouts.find(w=>w.id===s.day)||{}).label||s.day))].join(' + ');
+    const sets=x.sess.reduce((a,s)=>a+(s.entries||[]).reduce((b,e)=>b+(e.sets?e.sets.length:0),0),0);
+    detail.innerHTML=`${lbl} · <b>${labels}</b> · ${sets} set${sets===1?'':'s'}`;
   }));
 }
 
