@@ -458,8 +458,15 @@ async function load(){
   S.foodMemory=S.foodMemory||{};
   Object.values(S.food||{}).forEach(list=>(list||[]).forEach(x=>{ if(x&&x.n) S.foodMemory[x.n.toLowerCase()]={n:x.n,c:x.c||0,p:x.p||0}; }));
   if(!Array.isArray(S.workouts)||!S.workouts.length) S.workouts=JSON.parse(JSON.stringify(DEFAULT_W));
+  patchExerciseOptions();
   if(!S.workouts.find(d=>d.id===day)) day=S.workouts[0].id;
   boot();
+}
+// give built-in exercises options that were added after the user's data was first saved
+function patchExerciseOptions(){
+  (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
+    if(e && !e.v && (e.nm||'').trim().toLowerCase()==='leg press') e.v=['Left','Right'];
+  }));
 }
 async function save(){
   try{
@@ -504,7 +511,7 @@ const DEFAULT_W=[
  {id:'legs',label:'Legs',ex:[
   {id:'g1',nm:'Back squat or hack squat',pr:'4 × 5–8',cue:'Whichever you can load without your low back taking over.'},
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
-  {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
+  {id:'g3',nm:'Leg press',pr:'3 × 10–15',v:['Left','Right'],cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
   {id:'g4',nm:'Seated leg curl',pr:'3 × 10–15',cue:'Hamstrings grow best seated — more stretch than lying.'},
   {id:'g5',nm:'Standing calf raise',pr:'4 × 10–15',cue:'Full stretch at the bottom, pause a beat at the top.'}]},
  {id:'taper',label:'Taper',ex:[
@@ -706,13 +713,12 @@ function addSet(box){
   const tag = ex&&ex.v ? (sel[id]||ex.v[0]) : null;
   recordSet(id,{w,r,t:tag});
   save(); renderEx(); renderHistory();
-  // reopen the same box with weight + variation kept, so back-to-back sets are two taps
+  // reopen the same box, cleared, with the variation kept — cursor on weight for the next set
   const reopened=document.querySelector(`.inputs[data-id="${id}"]`);
   if(reopened){
     reopened.classList.add('show');
-    reopened.querySelector('.w').value = (w==='BW'?'':w);
     if(tag) reopened.querySelectorAll(`.vchip[data-id="${id}"]`).forEach(x=>x.classList.toggle('on',x.dataset.v===tag));
-    reopened.querySelector('.r').focus();
+    reopened.querySelector('.w').focus();
   }
 }
 
@@ -1085,6 +1091,7 @@ function initBackup(){
       S.food=S.food||{}; S.weights=S.weights||[]; S.sessions=S.sessions||[];
       if(!Array.isArray(S.quick)) S.quick=DEFAULT_QUICK.slice();
       if(!Array.isArray(S.workouts)||!S.workouts.length) S.workouts=JSON.parse(JSON.stringify(DEFAULT_W));
+      patchExerciseOptions();
       if(!S.workouts.find(d=>d.id===day)) day=S.workouts[0].id;
       save();
       renderDays(); renderEx(); renderQuick(); renderFuel(); renderTrend(); renderHistory();
