@@ -102,6 +102,8 @@
   .inputs input:focus{outline:2px solid var(--flare);outline-offset:1px;}
   .inputs .x{color:var(--dim);font-family:'Space Mono';font-size:12px;}
   .inputs .go{background:var(--flare);color:var(--void);border:none;border-radius:10px;padding:11px 15px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Space Grotesk';}
+  .inputs .tmr{display:block;width:100%;margin-bottom:8px;background:var(--void);border:1px solid var(--volt);color:var(--volt);border-radius:10px;padding:13px;font-family:'Space Mono',monospace;font-size:16px;font-weight:700;cursor:pointer;transition:.12s;}
+  .inputs .tmr.run{background:var(--volt);color:var(--void);border-color:var(--volt);}
 
   .setlist{margin-top:9px;border-left:2px solid var(--flare);padding-left:11px;}
   .setrow{display:flex;align-items:center;gap:10px;padding:5px 0;}
@@ -223,6 +225,12 @@
   .cell.g-part,.sw.g-part{background:var(--volt);}
   .cell.g-miss,.sw.g-miss{background:var(--edge);}
   .cell.g-none,.sw.g-none{background:var(--void);border:1px solid var(--edge);}
+  .cell.g-cardio,.sw.g-cardio{background:var(--volt);}
+  .activesec{margin-top:6px;}
+  .acttoday{margin-top:10px;min-height:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .acttoday .acttag{font-family:'Space Mono',monospace;font-size:12.5px;color:var(--volt);}
+  .acttoday button{background:none;border:1px solid var(--edge);color:var(--dim);border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Space Grotesk';}
+  .acttoday button:hover{border-color:var(--flare);color:var(--flare);}
   .heatleg{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin-top:13px;font-size:10.5px;color:var(--dim);font-family:'Space Mono',monospace;}
   .heatleg .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px;}
   .goaldetail{margin-top:13px;text-align:center;font-family:'Space Mono',monospace;font-size:12.5px;color:var(--steel);min-height:18px;}
@@ -397,14 +405,23 @@
       </div>
 
       <div class="goalsec">
-        <div class="qhead"><span class="eyebrow">Workout days · last 30 days</span></div>
+        <div class="activesec">
+          <div class="qhead"><span class="eyebrow">Cardio / swim / non-lifting day?</span></div>
+          <div class="addrow">
+            <input class="f" id="actNote" placeholder="what'd you do? (optional)" autocomplete="off">
+            <button id="actAdd">Log day</button>
+          </div>
+          <div class="acttoday" id="actToday"></div>
+        </div>
+        <div class="qhead" style="margin-top:20px;"><span class="eyebrow">Workout days · last 30 days</span></div>
         <div class="stats" id="wdStats"></div>
         <div class="heat" id="wdGrid"></div>
         <div class="heatleg">
-          <span><i class="sw g-both"></i>trained</span>
+          <span><i class="sw g-both"></i>lift</span>
+          <span><i class="sw g-cardio"></i>cardio / active</span>
           <span><i class="sw g-none"></i>rest / off</span>
         </div>
-        <div class="goaldetail" id="wdDetail">Tap a day to see what you trained.</div>
+        <div class="goaldetail" id="wdDetail">Tap a day to see what you did.</div>
       </div>
 
       <div id="history"></div>
@@ -443,7 +460,7 @@ async function load(){
     if(window.storage){ const r=await window.storage.get(KEY); if(r&&r.value) S=JSON.parse(r.value); }
     else { const v=localStorage.getItem(KEY); if(v) S=JSON.parse(v); }
   }catch(e){}
-  S.lifts=S.lifts||{}; S.food=S.food||{}; S.weights=S.weights||[]; S.sessions=S.sessions||[];
+  S.lifts=S.lifts||{}; S.food=S.food||{}; S.weights=S.weights||[]; S.sessions=S.sessions||[]; S.active=S.active||{};
   // migrate old {sets:n, weight, reps} entries into per-set arrays
   S.sessions.forEach(s=>{
     (s.entries||[]).forEach(e=>{
@@ -467,6 +484,11 @@ function patchExerciseOptions(){
   (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
     if(e && !e.v && (e.nm||'').trim().toLowerCase()==='leg press') e.v=['Left','Right'];
   }));
+  // add the Dead hang (timed) to Pull day if it isn't there yet
+  const pull=(S.workouts||[]).find(d=>d.id==='pull');
+  if(pull && Array.isArray(pull.ex) && !pull.ex.some(e=>(e.nm||'').trim().toLowerCase()==='dead hang')){
+    pull.ex.push({id:'l7',nm:'Dead hang',pr:'3 × max time',timed:true,cue:'Grip and decompression. Hang with shoulders active, breathe — beat your best time.'});
+  }
 }
 async function save(){
   try{
@@ -507,7 +529,8 @@ const DEFAULT_W=[
   {id:'l3',nm:'Straight-arm pulldown',pr:'3 × 12–15',cue:'Lats only. Elbows locked, sweep the bar to your thighs.'},
   {id:'l4',nm:'Face pull',pr:'3 × 15–20',cue:'Rear delts and posture. Pull to your forehead, thumbs back.'},
   {id:'l5',nm:'Hammer curl',pr:'3 × 8–12',cue:'Brachialis and forearm. This is the one that thickens the arm from the side.'},
-  {id:'l6',nm:'Wrist curl + reverse curl',pr:'2 × 15–20 ea',cue:'Forearms need direct work and high reps. Burn is the point.'}]},
+  {id:'l6',nm:'Wrist curl + reverse curl',pr:'2 × 15–20 ea',cue:'Forearms need direct work and high reps. Burn is the point.'},
+  {id:'l7',nm:'Dead hang',pr:'3 × max time',timed:true,cue:'Grip and decompression. Hang with shoulders active, breathe — beat your best time.'}]},
  {id:'legs',label:'Legs',ex:[
   {id:'g1',nm:'Back squat or hack squat',pr:'4 × 5–8',cue:'Whichever you can load without your low back taking over.'},
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
@@ -582,9 +605,26 @@ function lastSets(id){
   if(!prior.length) return null;
   return prior[0].entries.find(e=>e.id===id).sets;
 }
-const setStr = arr => arr.map(s=>`${s.t?s.t+' ':''}${s.w}×${s.r}`).join('  ·  ');
+function fmtDur(s){ s=Math.max(0,Math.round(+s||0)); return s<60 ? s+'s' : Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+const setStr = arr => arr.map(s=>{
+  const tag = s.t?s.t+' ':'';
+  if(s.u==='s') return `${tag}${s.w&&s.w!=='BW'?s.w+'lb ':''}${fmtDur(s.r)}`;
+  return `${tag}${s.w}×${s.r}`;
+}).join('  ·  ');
+
+/* count-up timer for timed exercises (dead hangs); fills the seconds field live */
+let hangIv=null;
+function stopHangTimer(){ if(hangIv){ clearInterval(hangIv); hangIv=null; } }
+function toggleHangTimer(btn){
+  const box=btn.closest('.inputs'); const rEl=box.querySelector('.r');
+  if(hangIv){ stopHangTimer(); btn.textContent='▶ Start hang'; btn.classList.remove('run'); return; }
+  const t0=Date.now(); rEl.value='0';
+  btn.classList.add('run'); btn.textContent='■ Stop · 0s';
+  hangIv=setInterval(()=>{ const s=Math.floor((Date.now()-t0)/1000); rEl.value=s; btn.textContent='■ Stop · '+fmtDur(s); },250);
+}
 
 function renderEx(){
+  stopHangTimer();
   const el=document.getElementById('exs');
   const list=dayObj().ex;
 
@@ -641,7 +681,7 @@ function renderEx(){
     const mine=todaySets(e.id), prev=lastSets(e.id);
     const val = prev ? setStr(prev) : 'first time — set the bar';
     const rows = mine.length ? `<div class="setlist">${mine.map((s,i)=>
-      `<div class="setrow"><span class="sn">${i+1}</span><span class="sv">${s.t?`<b class="tag">${s.t}</b> `:''}${s.w==='BW'?'BW':s.w+' lb'} × ${s.r}</span><button class="sd" data-id="${e.id}" data-i="${i}">✕</button></div>`
+      `<div class="setrow"><span class="sn">${i+1}</span><span class="sv">${s.t?`<b class="tag">${s.t}</b> `:''}${s.u==='s'?`${s.w&&s.w!=='BW'?s.w+' lb · ':''}${fmtDur(s.r)}`:`${s.w==='BW'?'BW':s.w+' lb'} × ${s.r}`}</span><button class="sd" data-id="${e.id}" data-i="${i}">✕</button></div>`
     ).join('')}</div>` : '';
     const varRow = e.v ? `<div class="vars" data-id="${e.id}">${e.v.map((o,i)=>
       `<button class="vchip ${i===0?'on':''}" data-id="${e.id}" data-v="${o}">${o}</button>`).join('')}</div>` : '';
@@ -652,15 +692,22 @@ function renderEx(){
         <span class="lab">${prev?'beat this':'no log yet'}</span><span class="val">${val}</span>
       </div>
       ${rows}
-      <button class="logbtn" data-id="${e.id}">＋ add set</button>
+      <button class="logbtn" data-id="${e.id}">＋ ${e.timed?'add a hang':'add set'}</button>
       <div class="inputs" data-id="${e.id}">
         ${varRow}
-        <div class="inrow">
-          <input class="w" type="number" inputmode="decimal" placeholder="lb or blank">
-          <span class="x">×</span>
-          <input class="r" type="number" inputmode="numeric" placeholder="reps">
-          <button class="go">Add</button>
-        </div>
+        ${e.timed
+          ? `<button class="tmr" data-id="${e.id}">▶ Start hang</button>
+             <div class="inrow">
+               <input class="w" type="number" inputmode="decimal" placeholder="lb or blank">
+               <input class="r" type="number" inputmode="numeric" placeholder="seconds">
+               <button class="go">Add</button>
+             </div>`
+          : `<div class="inrow">
+               <input class="w" type="number" inputmode="decimal" placeholder="lb or blank">
+               <span class="x">×</span>
+               <input class="r" type="number" inputmode="numeric" placeholder="reps">
+               <button class="go">Add</button>
+             </div>`}
       </div>
     </div>`;
   }).join('') || '<div class="empty">No exercises on this day yet. Tap Edit to add some.</div>';
@@ -675,6 +722,7 @@ function renderEx(){
     el.querySelectorAll(`.vchip[data-id="${c.dataset.id}"]`).forEach(x=>x.classList.toggle('on',x===c));
   }));
   el.querySelectorAll('.inputs .go').forEach(g=>g.addEventListener('click',()=>addSet(g.closest('.inputs'))));
+  el.querySelectorAll('.tmr').forEach(btn=>btn.addEventListener('click',()=>toggleHangTimer(btn)));
   el.querySelectorAll('.inputs input').forEach(inp=>inp.addEventListener('keydown',ev=>{
     if(ev.key==='Enter') addSet(inp.closest('.inputs'));
   }));
@@ -711,14 +759,15 @@ function addSet(box){
   const id=box.dataset.id;
   const ex=dayObj().ex.find(e=>e.id===id);
   const tag = ex&&ex.v ? (sel[id]||ex.v[0]) : null;
-  recordSet(id,{w,r,t:tag});
+  recordSet(id,{w,r,t:tag,u: ex&&ex.timed?'s':null});
   save(); renderEx(); renderHistory();
   // reopen the same box, cleared, with the variation kept — cursor on weight for the next set
   const reopened=document.querySelector(`.inputs[data-id="${id}"]`);
   if(reopened){
     reopened.classList.add('show');
     if(tag) reopened.querySelectorAll(`.vchip[data-id="${id}"]`).forEach(x=>x.classList.toggle('on',x.dataset.v===tag));
-    reopened.querySelector('.w').focus();
+    if(ex&&ex.timed){ const t=reopened.querySelector('.tmr'); if(t){ t.textContent='▶ Start hang'; t.classList.remove('run'); } }
+    else reopened.querySelector('.w').focus();
   }
 }
 
@@ -730,7 +779,7 @@ function recordSet(id,set){
   const ex=dayObj().ex.find(e=>e.id===id);
   let e=s.entries.find(x=>x.id===id);
   if(!e){ e={id,nm:ex?ex.nm:id,sets:[]}; s.entries.push(e); }
-  e.sets.push({w:set.w,r:set.r,t:set.t||null,at:new Date().toISOString()});
+  e.sets.push({w:set.w,r:set.r,t:set.t||null,u:set.u||null,at:new Date().toISOString()});
 }
 function removeSet(id,i){
   const s=S.sessions.find(x=>x.key===todayKey());
@@ -1031,15 +1080,18 @@ function renderWorkoutDays(){
     const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-k);
     const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const sess=(S.sessions||[]).filter(s=>s.date===key);
-    days.push({d,key,sess,trained:sess.length>0});
+    const active=(S.active||{})[key]!==undefined;
+    days.push({d,key,sess,active,trained:sess.length>0});
   }
   const trained=days.filter(x=>x.trained).length;
+  const activeDays=days.filter(x=>x.active&&!x.trained).length;
   const perWeek=(trained/N*7).toFixed(1);
   document.getElementById('wdStats').innerHTML=
-    `<div class="st"><div class="v">${trained}</div><div class="l">days trained</div></div>`+
-    `<div class="st"><div class="v">${perWeek}</div><div class="l">per week</div></div>`;
+    `<div class="st"><div class="v">${trained}</div><div class="l">lift days</div></div>`+
+    `<div class="st"><div class="v">${activeDays}</div><div class="l">active days</div></div>`+
+    `<div class="st"><div class="v">${perWeek}</div><div class="l">lifts / week</div></div>`;
   grid.innerHTML=days.map((x,i)=>{
-    const cls = x.trained ? 'g-both' : 'g-none';
+    const cls = x.trained ? 'g-both' : (x.active ? 'g-cardio' : 'g-none');
     const t = x.key===todayStr ? ' today' : '';
     return `<button class="cell ${cls}${t}" data-i="${i}"></button>`;
   }).join('');
@@ -1047,11 +1099,37 @@ function renderWorkoutDays(){
   grid.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
     const x=days[+b.dataset.i];
     const lbl=x.d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-    if(!x.trained){ detail.innerHTML=`${lbl} · <span class="miss">rest / off</span>`; return; }
+    if(!x.trained){
+      if(x.active){ const n=(S.active||{})[x.key]; detail.innerHTML=`${lbl} · <b>Active</b>${n?' · '+n:''}`; }
+      else detail.innerHTML=`${lbl} · <span class="miss">rest / off</span>`;
+      return;
+    }
     const labels=[...new Set(x.sess.map(s=>(S.workouts.find(w=>w.id===s.day)||{}).label||s.day))].join(' + ');
     const sets=x.sess.reduce((a,s)=>a+(s.entries||[]).reduce((b,e)=>b+(e.sets?e.sets.length:0),0),0);
-    detail.innerHTML=`${lbl} · <b>${labels}</b> · ${sets} set${sets===1?'':'s'}`;
+    const extra = x.active ? ` <span class="miss">+ cardio</span>` : '';
+    detail.innerHTML=`${lbl} · <b>${labels}</b> · ${sets} set${sets===1?'':'s'}${extra}`;
   }));
+}
+
+/* active / cardio day marker (non-lifting days) */
+function initActive(){
+  const btn=document.getElementById('actAdd'), inp=document.getElementById('actNote');
+  if(!btn) return;
+  const logIt=()=>{ S.active=S.active||{}; S.active[tk()]=(inp.value||'').trim(); save(); renderActive(); renderWorkoutDays(); };
+  btn.addEventListener('click',logIt);
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') logIt(); });
+}
+function renderActive(){
+  const box=document.getElementById('actToday'); if(!box) return;
+  const key=tk(), note=(S.active||{})[key];
+  if(note===undefined){ box.innerHTML=''; return; }
+  const shown=(note||'').replace(/</g,'&lt;');
+  box.innerHTML=`<span class="acttag">✓ Logged active today${shown?' · '+shown:''}</span><button id="actDel">remove</button>`;
+  document.getElementById('actDel').addEventListener('click',()=>{
+    delete S.active[key];
+    const inp=document.getElementById('actNote'); if(inp) inp.value='';
+    save(); renderActive(); renderWorkoutDays();
+  });
 }
 
 function tickClock(){
@@ -1088,20 +1166,20 @@ function initBackup(){
       const data=JSON.parse(decodeURIComponent(escape(atob(raw))));
       if(typeof data!=='object'||!data) throw new Error('bad');
       S=data;
-      S.food=S.food||{}; S.weights=S.weights||[]; S.sessions=S.sessions||[];
+      S.food=S.food||{}; S.weights=S.weights||[]; S.sessions=S.sessions||[]; S.active=S.active||{};
       if(!Array.isArray(S.quick)) S.quick=DEFAULT_QUICK.slice();
       if(!Array.isArray(S.workouts)||!S.workouts.length) S.workouts=JSON.parse(JSON.stringify(DEFAULT_W));
       patchExerciseOptions();
       if(!S.workouts.find(d=>d.id===day)) day=S.workouts[0].id;
       save();
-      renderDays(); renderEx(); renderQuick(); renderFuel(); renderTrend(); renderHistory();
+      renderDays(); renderEx(); renderQuick(); renderFuel(); renderTrend(); renderHistory(); renderActive();
       document.getElementById('bkText').value=''; document.getElementById('bkImport').classList.remove('show');
       flashMsg('Restored ✓ — all your data is back');
     }catch(e){ flashMsg('That code didn\'t read right — check you pasted all of it'); }
   });
 }
 
-function boot(){ initEditToggle(); initBackup(); tickClock(); renderDays(); renderEx(); renderQuick(); renderFuel(); refreshFoodList(); renderTrend(); renderHistory(); }
+function boot(){ initEditToggle(); initBackup(); initActive(); tickClock(); renderDays(); renderEx(); renderQuick(); renderFuel(); refreshFoodList(); renderTrend(); renderHistory(); renderActive(); }
 load();
 </script>
 </body>
