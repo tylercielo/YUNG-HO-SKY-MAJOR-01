@@ -29,7 +29,7 @@
   body{
     background:var(--void);color:var(--paper);
     font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.5;
-    max-width:600px;margin:0 auto;padding:0 0 60px;min-height:100vh;
+    max-width:600px;margin:0 auto;padding:0 0 60px;min-height:100vh;overflow-x:hidden;
     background-image:radial-gradient(120% 50% at 50% 0%, rgba(255,238,140,0.10), transparent 60%);
   }
   .wrap{padding:0 16px;}
@@ -51,6 +51,11 @@
   .tab:focus-visible{outline:2px solid var(--volt);outline-offset:2px;}
   .panel{display:none;}
   .panel.on{display:block;}
+  @keyframes slideInR{from{opacity:0;transform:translateX(38px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes slideInL{from{opacity:0;transform:translateX(-38px);}to{opacity:1;transform:translateX(0);}}
+  .panel.on.anim-r{animation:slideInR .2s ease-out;}
+  .panel.on.anim-l{animation:slideInL .2s ease-out;}
+  @media (prefers-reduced-motion:reduce){.panel.on.anim-r,.panel.on.anim-l{animation:none;}}
 
   .card{background:var(--deck);border:1px solid var(--edge);border-radius:18px;padding:18px;margin-top:14px;}
   .card h2{font-family:'Instrument Serif',serif;font-size:23px;line-height:1.15;}
@@ -330,6 +335,14 @@
         </div>
       </div>
 
+      <div class="addrow">
+        <input class="f" id="fName" placeholder="Anything else" list="foodList" autocomplete="off">
+        <input class="c" id="fCal" type="number" inputmode="numeric" placeholder="cal">
+        <input class="p" id="fPro" type="number" inputmode="numeric" placeholder="pro">
+        <button id="fAdd">Add</button>
+      </div>
+      <datalist id="foodList"></datalist>
+
       <div class="qhead" id="recentHead" style="display:none;">
         <span class="eyebrow">Recent</span>
       </div>
@@ -346,14 +359,6 @@
         <input class="sp" id="sPro" type="number" inputmode="numeric" placeholder="pro">
         <button id="sAdd">Save</button>
       </div>
-
-      <div class="addrow">
-        <input class="f" id="fName" placeholder="Anything else" list="foodList" autocomplete="off">
-        <input class="c" id="fCal" type="number" inputmode="numeric" placeholder="cal">
-        <input class="p" id="fPro" type="number" inputmode="numeric" placeholder="pro">
-        <button id="fAdd">Add</button>
-      </div>
-      <datalist id="foodList"></datalist>
 
       <div class="foods" id="foods"></div>
 
@@ -513,11 +518,39 @@ function toast(){
 const tk=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 
 /* ---- tabs ---- */
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+const TABS=[...document.querySelectorAll('.tab')];
+function selectTab(t){
+  if(!t) return;
+  const cur=TABS.findIndex(x=>x.classList.contains('on'));
+  const idx=TABS.indexOf(t);
+  const dir = idx>cur ? 'r' : (idx<cur ? 'l' : null);
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
-  t.classList.add('on'); document.getElementById('p-'+t.dataset.p).classList.add('on');
-}));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on','anim-r','anim-l'));
+  t.classList.add('on');
+  const panel=document.getElementById('p-'+t.dataset.p);
+  panel.classList.add('on');
+  if(dir){ void panel.offsetWidth; panel.classList.add('anim-'+dir); } // reflow so the animation restarts
+}
+TABS.forEach(t=>t.addEventListener('click',()=>selectTab(t)));
+
+/* swipe left/right to move between tabs */
+let swX=0, swY=0, swT=0;
+document.addEventListener('touchstart',e=>{
+  const t=e.changedTouches[0]; swX=t.clientX; swY=t.clientY; swT=Date.now();
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  const t=e.changedTouches[0];
+  const dx=t.clientX-swX, dy=t.clientY-swY, dt=Date.now()-swT;
+  if(dt>700) return;                          // too slow to be a flick
+  if(Math.abs(dx)<60) return;                 // not far enough sideways
+  if(Math.abs(dx)<Math.abs(dy)*1.5) return;   // too vertical — that's a scroll
+  const cur=TABS.findIndex(x=>x.classList.contains('on'));
+  if(cur<0) return;
+  const next=cur+(dx<0?1:-1);                 // swipe left → next tab
+  if(next<0||next>=TABS.length) return;       // stop at the ends, no wrap
+  selectTab(TABS[next]);
+  window.scrollTo({top:0,behavior:'smooth'});
+},{passive:true});
 
 /* ================= TRAIN ================= */
 const DEFAULT_W=[
