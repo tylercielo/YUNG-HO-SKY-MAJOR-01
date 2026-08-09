@@ -330,8 +330,13 @@
         </div>
       </div>
 
+      <div class="qhead" id="recentHead" style="display:none;">
+        <span class="eyebrow">Recent</span>
+      </div>
+      <div class="quick" id="recent"></div>
+
       <div class="qhead">
-        <span class="eyebrow">Tap to add</span>
+        <span class="eyebrow">Staples</span>
         <button class="editbtn" id="qEdit">Edit</button>
       </div>
       <div class="quick" id="quick"></div>
@@ -876,7 +881,34 @@ document.getElementById('fAdd').addEventListener('click',()=>{
   document.getElementById('fPro').value='';
   document.getElementById('fName').focus();
 });
+// most-recently-logged distinct foods, newest first — your actual eating history
+function recentFoods(limit){
+  limit=limit||8;
+  const dates=Object.keys(S.food||{}).sort((a,b)=>b.localeCompare(a));
+  const seen=new Set(), out=[];
+  for(const d of dates){
+    const list=S.food[d]||[];
+    for(let i=list.length-1;i>=0;i--){
+      const x=list[i]; if(!x||!x.n) continue;
+      const key=x.n.toLowerCase();
+      if(seen.has(key)) continue;
+      seen.add(key); out.push({n:x.n,c:x.c||0,p:x.p||0});
+      if(out.length>=limit) return out;
+    }
+  }
+  return out;
+}
+function renderRecent(){
+  const el=document.getElementById('recent'); if(!el) return;
+  const head=document.getElementById('recentHead');
+  const foods=recentFoods(8);
+  if(!foods.length){ el.innerHTML=''; if(head) head.style.display='none'; return; }
+  if(head) head.style.display='';
+  el.innerHTML=foods.map((f,i)=>`<button class="chip" data-i="${i}">${f.n}<small>${f.p}p</small></button>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ const f=foods[+c.dataset.i]; addFood(f.n,f.c,f.p); }));
+}
 function renderFuel(){
+  renderRecent();
   const list=S.food[tk()]||[];
   const tc=list.reduce((a,b)=>a+b.c,0), tp=list.reduce((a,b)=>a+b.p,0);
   document.getElementById('calNow').textContent=tc.toLocaleString();
