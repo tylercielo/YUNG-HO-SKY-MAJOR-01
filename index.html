@@ -230,6 +230,15 @@
   .cell.g-miss,.sw.g-miss{background:var(--edge);}
   .cell.g-none,.sw.g-none{background:var(--void);border:1px solid var(--edge);}
   .cell.g-cardio,.sw.g-cardio{background:var(--volt);}
+  .mrow{display:flex;align-items:center;gap:10px;padding:6px 0;}
+  .mrow .mn{font-size:13px;color:var(--steel);width:82px;flex-shrink:0;}
+  .mrow .mbar{flex:1;height:8px;background:var(--void);border-radius:5px;overflow:hidden;}
+  .mrow .mbar i{display:block;height:100%;border-radius:5px;background:var(--volt);transition:width .4s cubic-bezier(.2,.8,.2,1);}
+  .mrow .mv{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--paper);width:30px;text-align:right;flex-shrink:0;}
+  .mrow.low .mbar i{background:var(--peach);}
+  .mrow.low .mn{color:var(--peach);}
+  .mrow.zero .mn{color:var(--dim);}
+  .mrow.zero .mv{color:var(--dim);}
   .activesec{margin-top:6px;}
   .acttoday{margin-top:10px;min-height:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .acttoday .acttag{font-family:'Space Mono',monospace;font-size:12.5px;color:var(--volt);}
@@ -432,6 +441,13 @@
           <span><i class="sw g-none"></i>rest / off</span>
         </div>
         <div class="goaldetail" id="wdDetail">Tap a day to see what you did.</div>
+      </div>
+
+      <div class="goalsec">
+        <div class="qhead"><span class="eyebrow">Muscle volume · last 7 days</span></div>
+        <div class="sub" style="margin:2px 0 4px;font-size:12.5px;">Weekly sets per muscle. A lift's main muscles count as a full set, assisting muscles as a half. Bars in peach are under ~6 sets — the gaps worth filling.</div>
+        <div id="muscleBars"></div>
+        <div class="goaldetail" id="muscleNote"></div>
       </div>
 
       <div id="history"></div>
@@ -1148,6 +1164,7 @@ function sessionTime(s){
 function renderHistory(){
   const el=document.getElementById('history');
   renderWorkoutDays();
+  renderMuscles();
   const list=[...S.sessions].sort((a,b)=> b.date.localeCompare(a.date) || (b.entries[0]?.at||'').localeCompare(a.entries[0]?.at||''));
   const now=new Date(), ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('hTotal').textContent=list.length;
@@ -1184,6 +1201,78 @@ function renderHistory(){
   el.querySelectorAll('.sx').forEach(b=>b.addEventListener('click',()=>{
     S.sessions=S.sessions.filter(x=>x.key!==b.dataset.k); save(); renderHistory();
   }));
+}
+
+/* ===== muscle volume: which muscles you've trained this week ===== */
+const MUSCLES={
+  chest:'Chest', frontDelts:'Front delts', sideDelts:'Side delts', rearDelts:'Rear delts',
+  lats:'Lats', upperBack:'Upper back', biceps:'Biceps', triceps:'Triceps', forearms:'Forearms',
+  quads:'Quads', hams:'Hamstrings', glutes:'Glutes', calves:'Calves'
+};
+// each built-in lift → primary muscles (full set) + secondary (half set), keyed by name
+const EX_MUSCLES={
+  'incline dumbbell press':{m:['chest'],s:['frontDelts','triceps']},
+  'flat barbell bench':{m:['chest'],s:['frontDelts','triceps']},
+  'seated dumbbell shoulder press':{m:['frontDelts'],s:['sideDelts','triceps']},
+  'cable lateral raise':{m:['sideDelts'],s:[]},
+  'cable fly':{m:['chest'],s:[]},
+  'overhead triceps extension':{m:['triceps'],s:[]},
+  'wide-grip pull-up or pulldown':{m:['lats'],s:['biceps','upperBack']},
+  'chest-supported row':{m:['upperBack'],s:['lats','biceps','rearDelts']},
+  'incline db curl':{m:['biceps'],s:[]},
+  'bayesian curl':{m:['biceps'],s:[]},
+  'straight-arm pulldown':{m:['lats'],s:[]},
+  'face pull':{m:['rearDelts'],s:['upperBack']},
+  'hammer curl':{m:['biceps'],s:['forearms']},
+  'wrist curl + reverse curl':{m:['forearms'],s:[]},
+  'dead hang':{m:['forearms'],s:['upperBack']},
+  'back squat or hack squat':{m:['quads'],s:['glutes','hams']},
+  'romanian deadlift':{m:['hams'],s:['glutes']},
+  'leg press':{m:['quads'],s:['glutes']},
+  'seated leg curl':{m:['hams'],s:[]},
+  'standing calf raise':{m:['calves'],s:[]},
+  'standing overhead press':{m:['frontDelts'],s:['sideDelts','triceps']},
+  'dumbbell lateral raise':{m:['sideDelts'],s:[]},
+  'rear delt fly':{m:['rearDelts'],s:[]},
+  'neutral-grip lat pulldown':{m:['lats'],s:['biceps','upperBack']},
+  "farmer's carry":{m:['forearms'],s:['upperBack']},
+  'bulgarian split squat':{m:['quads'],s:['glutes','hams']}
+};
+function muscleVolume(days){
+  days=days||7;
+  const t=new Date(), cutoff=new Date(t.getFullYear(),t.getMonth(),t.getDate()-(days-1));
+  const totals={}; Object.keys(MUSCLES).forEach(k=>totals[k]=0);
+  let untagged=0;
+  (S.sessions||[]).forEach(s=>{
+    const [y,m,d]=s.date.split('-').map(Number);
+    if(new Date(y,m-1,d)<cutoff) return;
+    (s.entries||[]).forEach(e=>{
+      const n=(e.sets||[]).length; if(!n) return;
+      const tag=EX_MUSCLES[(e.nm||'').trim().toLowerCase()];
+      if(!tag){ untagged+=n; return; }
+      (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=n; });
+      (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=n*0.5; });
+    });
+  });
+  return {totals,untagged};
+}
+function renderMuscles(){
+  const el=document.getElementById('muscleBars'); if(!el) return;
+  const {totals,untagged}=muscleVolume(7);
+  const rows=Object.keys(MUSCLES).map(k=>({label:MUSCLES[k],v:totals[k]||0})).sort((a,b)=>b.v-a.v);
+  const max=Math.max(12,...rows.map(r=>r.v));
+  const LOW=6;
+  el.innerHTML=rows.map(r=>{
+    const cls = r.v===0?'zero':(r.v<LOW?'low':'');
+    const w=Math.min(100,r.v/max*100);
+    const val=Number.isInteger(r.v)?r.v:r.v.toFixed(1);
+    return `<div class="mrow ${cls}"><span class="mn">${r.label}</span><span class="mbar"><i style="width:${w}%"></i></span><span class="mv">${val}</span></div>`;
+  }).join('');
+  const note=document.getElementById('muscleNote'); if(!note) return;
+  const lows=rows.filter(r=>r.v<LOW).map(r=>r.label);
+  let txt = lows.length ? `<span class="miss">Low this week:</span> ${lows.join(', ')}` : `Every group has volume this week. Balanced.`;
+  if(untagged) txt += ` <span class="miss">· ${untagged} set${untagged===1?'':'s'} from unmapped lifts not counted</span>`;
+  note.innerHTML=txt;
 }
 
 function renderWorkoutDays(){
