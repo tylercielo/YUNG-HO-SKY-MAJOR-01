@@ -493,12 +493,23 @@ async function load(){
 // give built-in exercises options that were added after the user's data was first saved
 function patchExerciseOptions(){
   (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
-    if(e && !e.v && (e.nm||'').trim().toLowerCase()==='leg press') e.v=['Left','Right'];
+    if(e && (e.nm||'').trim().toLowerCase()==='leg press' && e.v) delete e.v;
   }));
   // add the Dead hang (timed) to Pull day if it isn't there yet
   const pull=(S.workouts||[]).find(d=>d.id==='pull');
   if(pull && Array.isArray(pull.ex) && !pull.ex.some(e=>(e.nm||'').trim().toLowerCase()==='dead hang')){
     pull.ex.push({id:'l7',nm:'Dead hang',pr:'3 × max time',timed:true,cue:'Grip and decompression. Hang with shoulders active, breathe — beat your best time.'});
+  }
+  // add supinated curls to Pull, right after the second compound (chest-supported row)
+  if(pull && Array.isArray(pull.ex)){
+    const has=nm=>pull.ex.some(e=>(e.nm||'').trim().toLowerCase()===nm);
+    const add=[];
+    if(!has('incline db curl')) add.push({id:'l8',nm:'Incline DB curl',pr:'3 × 8–12',cue:'Biceps peak and stretch. Bench at 45°, arms hang behind you, palms up. The stretch at the bottom does the work. No swinging.'});
+    if(!has('bayesian curl')) add.push({id:'l9',nm:'Bayesian curl',pr:'3 × 10–15',cue:'Biceps under constant stretch. Stand a step ahead of a low pulley, arm drawn behind your body, palm up. Don\'t let the elbow drift forward.'});
+    if(add.length){
+      const rowIdx=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='chest-supported row');
+      pull.ex.splice(rowIdx>=0?rowIdx+1:pull.ex.length,0,...add);
+    }
   }
 }
 async function save(){
@@ -599,6 +610,8 @@ const DEFAULT_W=[
  {id:'pull',label:'Pull',ex:[
   {id:'l1',nm:'Wide-grip pull-up or pulldown',pr:'4 × 6–12',cue:'Widest grip you actually control. Drive elbows down toward your hips.'},
   {id:'l2',nm:'Chest-supported row',pr:'3 × 8–12',cue:'Thickness. Chest stays on the pad — no cheating with your hips.'},
+  {id:'l8',nm:'Incline DB curl',pr:'3 × 8–12',cue:'Biceps peak and stretch. Bench at 45°, arms hang behind you, palms up. The stretch at the bottom does the work. No swinging.'},
+  {id:'l9',nm:'Bayesian curl',pr:'3 × 10–15',cue:'Biceps under constant stretch. Stand a step ahead of a low pulley, arm drawn behind your body, palm up. Don\'t let the elbow drift forward.'},
   {id:'l3',nm:'Straight-arm pulldown',pr:'3 × 12–15',cue:'Lats only. Elbows locked, sweep the bar to your thighs.'},
   {id:'l4',nm:'Face pull',pr:'3 × 15–20',cue:'Rear delts and posture. Pull to your forehead, thumbs back.'},
   {id:'l5',nm:'Hammer curl',pr:'3 × 8–12',cue:'Brachialis and forearm. This is the one that thickens the arm from the side.'},
@@ -607,7 +620,7 @@ const DEFAULT_W=[
  {id:'legs',label:'Legs',ex:[
   {id:'g1',nm:'Back squat or hack squat',pr:'4 × 5–8',cue:'Whichever you can load without your low back taking over.'},
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
-  {id:'g3',nm:'Leg press',pr:'3 × 10–15',v:['Left','Right'],cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
+  {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
   {id:'g4',nm:'Seated leg curl',pr:'3 × 10–15',cue:'Hamstrings grow best seated — more stretch than lying.'},
   {id:'g5',nm:'Standing calf raise',pr:'4 × 10–15',cue:'Full stretch at the bottom, pause a beat at the top.'}]},
  {id:'taper',label:'Taper',ex:[
