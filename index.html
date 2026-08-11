@@ -217,6 +217,19 @@
   .bar i{display:block;height:100%;border-radius:6px;width:0;transition:width .45s cubic-bezier(.2,.8,.2,1);}
   .cal .now{color:var(--paper);} .cal .bar i{background:var(--paper);}
   .pro .now{color:var(--volt);} .pro .bar i{background:var(--volt);}
+  /* goal hit: turn the tile gold and celebrate */
+  .tgt.hit{border-color:rgba(255,238,140,.55);box-shadow:var(--shadow-tile), var(--hi), 0 0 0 1px rgba(255,238,140,.3), 0 6px 20px -4px rgba(255,238,140,.3);}
+  .tgt.hit .now{color:var(--flare);}
+  .tgt.hit .bar i{background:var(--flare);}
+  .tgt.hit .lab::after{content:' ✓';color:var(--flare);font-weight:700;}
+  @keyframes goalPop{0%{transform:scale(1);}35%{transform:scale(1.045);}100%{transform:scale(1);}}
+  .tgt.pop{animation:goalPop .5s cubic-bezier(.34,1.56,.64,1);}
+  @media (prefers-reduced-motion:reduce){.tgt.pop{animation:none;}}
+  #celebrate{position:fixed;left:50%;bottom:70px;transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(180deg,#FFF3A6,#FFE86E);color:var(--void);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
+    padding:11px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:60;
+    box-shadow:0 8px 26px -4px rgba(255,238,140,.55);}
+  #celebrate.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   .qhead{display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:6px;}
   .qhead .eyebrow{margin:0;}
@@ -654,6 +667,19 @@ function selectTab(t){
   setTimeout(()=>done(),520); // fallback if transitionend doesn't fire
 }
 TABS.forEach(t=>t.addEventListener('click',()=>selectTab(t)));
+
+/* goal celebration state */
+let prevCalHit=false, prevProHit=false, fuelReady=false, celebTimer;
+function bigToast(msg){
+  let t=document.getElementById('celebrate');
+  if(!t){ t=document.createElement('div'); t.id='celebrate'; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add('show'); clearTimeout(celebTimer);
+  celebTimer=setTimeout(()=>t.classList.remove('show'),1900);
+}
+function celebrateGoal(kind,tile){
+  if(tile){ tile.classList.remove('pop'); void tile.offsetWidth; tile.classList.add('pop'); }
+  bigToast(kind==='cal' ? 'Calories hit — huge 💪' : 'Protein locked in ✓');
+}
 
 /* count-up animation for changing numbers (calories / protein) */
 function animateNumber(el,to,fmt){
@@ -1127,6 +1153,16 @@ function renderFuel(){
   animateNumber(document.getElementById('proNow'), tp, v=>String(v));
   document.getElementById('calBar').style.width=Math.min(100,tc/CAL*100)+'%';
   document.getElementById('proBar').style.width=Math.min(100,tp/PRO*100)+'%';
+  // goal-hit gold state + celebration on a fresh crossing
+  const calHit=tc>=CAL, proHit=tp>=PRO;
+  const calTile=document.querySelector('.tgt.cal'), proTile=document.querySelector('.tgt.pro');
+  if(calTile) calTile.classList.toggle('hit',calHit);
+  if(proTile) proTile.classList.toggle('hit',proHit);
+  if(fuelReady){
+    if(calHit && !prevCalHit) celebrateGoal('cal',calTile);
+    if(proHit && !prevProHit) celebrateGoal('pro',proTile);
+  }
+  prevCalHit=calHit; prevProHit=proHit; fuelReady=true;
   const isStaple=nm=>(S.quick||[]).some(q=>q.n.toLowerCase()===nm.toLowerCase());
   const f=document.getElementById('foods');
   f.innerHTML = list.length
