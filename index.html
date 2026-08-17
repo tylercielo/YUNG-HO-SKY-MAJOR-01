@@ -507,11 +507,7 @@
         <div class="qhead" style="margin-top:20px;"><span class="eyebrow">Workout days · last 30 days</span></div>
         <div class="stats" id="wdStats"></div>
         <div class="heat" id="wdGrid"></div>
-        <div class="heatleg">
-          <span><i class="sw g-both"></i>lift</span>
-          <span><i class="sw g-cardio"></i>cardio / active</span>
-          <span><i class="sw g-none"></i>rest / off</span>
-        </div>
+        <div class="heatleg" id="wdLegend"></div>
         <div class="goaldetail" id="wdDetail">Tap a day to see what you did.</div>
       </div>
 
@@ -1426,6 +1422,16 @@ function renderMuscles(){
   note.innerHTML=txt;
 }
 
+/* colour each workout type distinctly on the day map */
+const DAY_COLORS={push:'#FFE86E', pull:'#8FD3FF', legs:'#8FE3B0', taper:'#D6A9F0'};
+const DAY_FALLBACK=['#F5B78C','#B7A8F0','#7FD8C8','#F09CC0','#C7D66E'];
+function dayColor(id){
+  if(DAY_COLORS[id]) return DAY_COLORS[id];
+  if(!id) return '#c9d6e8';
+  // stable colour for any custom day id
+  let h=0; for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))>>>0;
+  return DAY_FALLBACK[h%DAY_FALLBACK.length];
+}
 function renderWorkoutDays(){
   const grid=document.getElementById('wdGrid'); if(!grid) return;
   const N=30, today=new Date(), todayStr=tk(), days=[];
@@ -1444,10 +1450,20 @@ function renderWorkoutDays(){
     `<div class="st"><div class="v">${activeDays}</div><div class="l">active days</div></div>`+
     `<div class="st"><div class="v">${perWeek}</div><div class="l">lifts / week</div></div>`;
   grid.innerHTML=days.map((x,i)=>{
-    const cls = x.trained ? 'g-both' : (x.active ? 'g-cardio' : 'g-none');
     const t = x.key===todayStr ? ' today' : '';
+    if(x.trained){
+      const col=dayColor(x.sess[0]&&x.sess[0].day);
+      return `<button class="cell${t}" style="background:${col};border-color:${col};" data-i="${i}"></button>`;
+    }
+    const cls = x.active ? 'g-cardio' : 'g-none';
     return `<button class="cell ${cls}${t}" data-i="${i}"></button>`;
   }).join('');
+  // legend reflects the actual workout days + cardio + rest
+  const leg=document.getElementById('wdLegend');
+  if(leg){
+    leg.innerHTML = (S.workouts||[]).map(w=>`<span><i class="sw" style="background:${dayColor(w.id)}"></i>${w.label}</span>`).join('')
+      + `<span><i class="sw g-cardio"></i>cardio</span><span><i class="sw g-none"></i>rest</span>`;
+  }
   const detail=document.getElementById('wdDetail');
   grid.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
     const x=days[+b.dataset.i];
