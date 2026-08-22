@@ -594,6 +594,14 @@ function patchExerciseOptions(){
       const rowIdx=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='chest-supported row');
       pull.ex.splice(rowIdx>=0?rowIdx+1:pull.ex.length,0,...add);
     }
+    // add rear delt isolation to Pull, grouped after Face pull
+    const radd=[];
+    if(!has('reverse pec deck')) radd.push({id:'l10',nm:'Reverse Pec Deck',pr:'3 × 12–20',cue:'Rear delt isolation, fully supported so you can focus on the squeeze. Lead with the elbows, drive them back and apart — not with your hands. Light weight, high reps. If you feel it in your traps, lighten it and slow down.'});
+    if(!has('cable reverse fly')) radd.push({id:'l11',nm:'Cable Reverse Fly',pr:'3 × 12–20',cue:'Rear delt isolation with constant tension. Stand between two low pulleys, cables crossed, pull out and back in a wide arc. Lead with the elbows, control the return. Light weight, high reps — if your traps take over, lighten it.'});
+    if(radd.length){
+      const faceIdx=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='face pull');
+      pull.ex.splice(faceIdx>=0?faceIdx+1:pull.ex.length,0,...radd);
+    }
   }
 }
 async function save(){
@@ -767,6 +775,8 @@ const DEFAULT_W=[
   {id:'l9',nm:'Bayesian curl',pr:'3 × 10–15',cue:'Biceps under constant stretch. Stand a step ahead of a low pulley, arm drawn behind your body, palm up. Don\'t let the elbow drift forward.'},
   {id:'l3',nm:'Straight-arm pulldown',pr:'3 × 12–15',cue:'Lats only. Elbows locked, sweep the bar to your thighs.'},
   {id:'l4',nm:'Face pull',pr:'3 × 15–20',cue:'Rear delts and posture. Pull to your forehead, thumbs back.'},
+  {id:'l10',nm:'Reverse Pec Deck',pr:'3 × 12–20',cue:'Rear delt isolation, fully supported so you can focus on the squeeze. Lead with the elbows, drive them back and apart — not with your hands. Light weight, high reps. If you feel it in your traps, lighten it and slow down.'},
+  {id:'l11',nm:'Cable Reverse Fly',pr:'3 × 12–20',cue:'Rear delt isolation with constant tension. Stand between two low pulleys, cables crossed, pull out and back in a wide arc. Lead with the elbows, control the return. Light weight, high reps — if your traps take over, lighten it.'},
   {id:'l5',nm:'Hammer curl',pr:'3 × 8–12',cue:'Brachialis and forearm. This is the one that thickens the arm from the side.'},
   {id:'l6',nm:'Wrist curl + reverse curl',pr:'2 × 15–20 ea',cue:'Forearms need direct work and high reps. Burn is the point.'},
   {id:'l7',nm:'Dead hang',pr:'3 × max time',timed:true,cue:'Grip and decompression. Hang with shoulders active, breathe — beat your best time.'}]},
@@ -1370,6 +1380,8 @@ const EX_MUSCLES={
   'bayesian curl':{m:['biceps'],s:[]},
   'straight-arm pulldown':{m:['lats'],s:[]},
   'face pull':{m:['rearDelts'],s:['upperBack']},
+  'reverse pec deck':{m:['rearDelts'],s:[]},
+  'cable reverse fly':{m:['rearDelts'],s:[]},
   'hammer curl':{m:['biceps'],s:['forearms']},
   'wrist curl + reverse curl':{m:['forearms'],s:[]},
   'dead hang':{m:['forearms'],s:['upperBack']},
