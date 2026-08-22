@@ -296,6 +296,15 @@
   .mrow.low .mn{color:var(--peach);}
   .mrow.zero .mn{color:var(--dim);}
   .mrow.zero .mv{color:var(--dim);}
+  .gaps{margin-top:15px;padding-top:14px;border-top:1px solid var(--edge);}
+  .gaps .gh{font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--flare);margin-bottom:8px;}
+  .gaprow{display:flex;gap:11px;align-items:flex-start;padding:7px 0;}
+  .gaprow .gi{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--flare);width:16px;flex-shrink:0;line-height:1.5;}
+  .gaprow .gbody{flex:1;min-width:0;}
+  .gaprow .gm{font-size:13.5px;font-weight:700;color:var(--paper);}
+  .gaprow .gv{font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-left:6px;}
+  .gaprow .gx{font-size:12.5px;color:var(--steel);line-height:1.45;margin-top:2px;}
+  .gaps .gdone{font-size:13px;color:var(--volt);}
   .activesec{margin-top:6px;}
   .acttoday{margin-top:10px;min-height:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .acttoday .acttag{font-family:'Space Mono',monospace;font-size:12.5px;color:var(--volt);}
@@ -516,6 +525,7 @@
         <div class="sub" style="margin:2px 0 4px;font-size:12.5px;">Weekly sets per muscle. A lift's main muscles count as a full set, assisting muscles as a half. Bars in peach are under ~6 sets — the gaps worth filling.</div>
         <div id="muscleBars"></div>
         <div class="goaldetail" id="muscleNote"></div>
+        <div id="muscleGaps"></div>
       </div>
 
       <div id="history"></div>
@@ -1432,6 +1442,29 @@ function renderMuscles(){
   let txt = lows.length ? `<span class="miss">Low this week:</span> ${lows.join(', ')}` : `Every group has volume this week. Balanced.`;
   if(untagged) txt += ` <span class="miss">· ${untagged} set${untagged===1?'':'s'} from unmapped lifts not counted</span>`;
   note.innerHTML=txt;
+  renderGaps(totals);
+}
+// worst-first hit list: the most-neglected muscles + which of your lifts hit them
+function renderGaps(totals){
+  const box=document.getElementById('muscleGaps'); if(!box) return;
+  const COVERED=8;
+  const low=Object.keys(MUSCLES).map(k=>({k,label:MUSCLES[k],v:totals[k]||0}))
+    .filter(m=>m.v<COVERED).sort((a,b)=>a.v-b.v).slice(0,6);
+  // map each muscle to lifts you actually have that primarily train it
+  const byMuscle={}, seen=new Set();
+  (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
+    const nm=(e.nm||'').trim(), key=nm.toLowerCase();
+    if(!nm || seen.has(key)) return; seen.add(key);
+    const tag=EX_MUSCLES[key]; if(!tag) return;
+    (tag.m||[]).forEach(mk=>{ (byMuscle[mk]=byMuscle[mk]||[]).push(nm); });
+  }));
+  if(!low.length){ box.innerHTML=`<div class="gaps"><div class="gdone">Everything's covered this week — no gaps to chase. Hold your split.</div></div>`; return; }
+  const rows=low.map((m,i)=>{
+    const ex=(byMuscle[m.k]||[]).slice(0,3).join(' · ') || 'no lift mapped for this yet';
+    const val=Number.isInteger(m.v)?m.v:m.v.toFixed(1);
+    return `<div class="gaprow"><span class="gi">${i+1}</span><div class="gbody"><div class="gm">${m.label}<span class="gv">${val} set${m.v===1?'':'s'}</span></div><div class="gx">${ex}</div></div></div>`;
+  }).join('');
+  box.innerHTML=`<div class="gaps"><div class="gh">Fill the gaps · worst first</div>${rows}</div>`;
 }
 
 /* colour each workout type distinctly on the day map */
