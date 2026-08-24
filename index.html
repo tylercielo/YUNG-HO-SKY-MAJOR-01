@@ -614,6 +614,12 @@ function patchExerciseOptions(){
       pull.ex.splice(faceIdx>=0?faceIdx+1:pull.ex.length,0,...radd);
     }
   }
+  // add the back-friendly cable hinge to Legs, grouped with the RDL
+  const legs=(S.workouts||[]).find(d=>d.id==='legs');
+  if(legs && Array.isArray(legs.ex) && !legs.ex.some(e=>(e.nm||'').trim().toLowerCase()==='standing cable rdl / pull-through')){
+    const rdlIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='romanian deadlift');
+    legs.ex.splice(rdlIdx>=0?rdlIdx+1:legs.ex.length,0,{id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'});
+  }
 }
 async function save(){
   try{
@@ -794,6 +800,7 @@ const DEFAULT_W=[
  {id:'legs',label:'Legs',ex:[
   {id:'g1',nm:'Back squat or hack squat',pr:'4 × 5–8',cue:'Whichever you can load without your low back taking over.'},
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
+  {id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'},
   {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
   {id:'g4',nm:'Seated leg curl',pr:'3 × 10–15',cue:'Hamstrings grow best seated — more stretch than lying.'},
   {id:'g5',nm:'Standing calf raise',pr:'4 × 10–15',cue:'Full stretch at the bottom, pause a beat at the top.'}]},
@@ -1398,6 +1405,7 @@ const EX_MUSCLES={
   'dead hang':{m:['forearms'],s:['upperBack']},
   'back squat or hack squat':{m:['quads'],s:['glutes','hams']},
   'romanian deadlift':{m:['hams'],s:['glutes']},
+  'standing cable rdl / pull-through':{m:['hams'],s:['glutes']},
   'leg press':{m:['quads'],s:['glutes']},
   'seated leg curl':{m:['hams'],s:[]},
   'standing calf raise':{m:['calves'],s:[]},
