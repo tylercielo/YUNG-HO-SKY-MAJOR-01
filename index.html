@@ -620,6 +620,22 @@ function patchExerciseOptions(){
     const rdlIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='romanian deadlift');
     legs.ex.splice(rdlIdx>=0?rdlIdx+1:legs.ex.length,0,{id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'});
   }
+  // add Chin-up to Pull if missing
+  if(pull && Array.isArray(pull.ex) && !pull.ex.some(e=>(e.nm||'').trim().toLowerCase()==='chin-up')){
+    const puIdx=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='wide-grip pull-up or pulldown');
+    pull.ex.splice(puIdx>=0?puIdx+1:0,0,{id:'l12',nm:'Chin-up',pr:'4 × 6–12',cue:'Underhand, shoulder-width. The bicep-heavy vertical pull — lats and biceps together. Full hang at the bottom, drive your chest to the bar.'});
+  }
+  // add back-safe glute isolation to Legs if missing
+  if(legs && Array.isArray(legs.ex)){
+    const gl=nm=>legs.ex.some(e=>(e.nm||'').trim().toLowerCase()===nm);
+    const gadd=[];
+    if(!gl('hip abduction')) gadd.push({id:'g7',nm:'Hip Abduction',pr:'3 × 12–20',cue:'Glute medius, fully seated — zero spinal load, safe on a cranky back. Push knees out against the pads, lean forward slightly to bias the glutes, pause at the end range. Controlled, no snapping back.'});
+    if(!gl('glute kickback')) gadd.push({id:'g8',nm:'Glute Kickback',pr:'3 × 12–20',cue:'Glute max isolation, standing, no load on the spine. Cuff or low cable, drive the heel straight back and up, squeeze at the top, control the return. Lower back stays still — the movement is all hip.'});
+    if(gadd.length){
+      const curlIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='seated leg curl');
+      legs.ex.splice(curlIdx>=0?curlIdx+1:legs.ex.length,0,...gadd);
+    }
+  }
 }
 async function save(){
   try{
@@ -787,6 +803,7 @@ const DEFAULT_W=[
   {id:'p6',nm:'Overhead triceps extension',pr:'3 × 10–15',cue:'Long head grows with the arm overhead.'}]},
  {id:'pull',label:'Pull',ex:[
   {id:'l1',nm:'Wide-grip pull-up or pulldown',pr:'4 × 6–12',cue:'Widest grip you actually control. Drive elbows down toward your hips.'},
+  {id:'l12',nm:'Chin-up',pr:'4 × 6–12',cue:'Underhand, shoulder-width. The bicep-heavy vertical pull — lats and biceps together. Full hang at the bottom, drive your chest to the bar.'},
   {id:'l2',nm:'Chest-supported row',pr:'3 × 8–12',cue:'Thickness. Chest stays on the pad — no cheating with your hips.'},
   {id:'l8',nm:'Incline DB curl',pr:'3 × 8–12',cue:'Biceps peak and stretch. Bench at 45°, arms hang behind you, palms up. The stretch at the bottom does the work. No swinging.'},
   {id:'l9',nm:'Bayesian curl',pr:'3 × 10–15',cue:'Biceps under constant stretch. Stand a step ahead of a low pulley, arm drawn behind your body, palm up. Don\'t let the elbow drift forward.'},
@@ -803,6 +820,8 @@ const DEFAULT_W=[
   {id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'},
   {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
   {id:'g4',nm:'Seated leg curl',pr:'3 × 10–15',cue:'Hamstrings grow best seated — more stretch than lying.'},
+  {id:'g7',nm:'Hip Abduction',pr:'3 × 12–20',cue:'Glute medius, fully seated — zero spinal load, safe on a cranky back. Push knees out against the pads, lean forward slightly to bias the glutes, pause at the end range. Controlled, no snapping back.'},
+  {id:'g8',nm:'Glute Kickback',pr:'3 × 12–20',cue:'Glute max isolation, standing, no load on the spine. Cuff or low cable, drive the heel straight back and up, squeeze at the top, control the return. Lower back stays still — the movement is all hip.'},
   {id:'g5',nm:'Standing calf raise',pr:'4 × 10–15',cue:'Full stretch at the bottom, pause a beat at the top.'}]},
  {id:'taper',label:'Taper',ex:[
   {id:'t1',nm:'Standing overhead press',pr:'4 × 5–8',cue:'The heavy shoulder day. Brace your abs so it doesn\'t become a lean-back.'},
@@ -1365,7 +1384,7 @@ function renderHistory(){
     out+=`<div class="sess">
       <div class="sh">
         <span class="sd">${dLabel}</span>
-        <span class="sday">${(S.workouts.find(d=>d.id===s.day)||{}).label||s.day}</span>
+        <span class="sday" style="background:${dayColor(s.day)}">${(S.workouts.find(d=>d.id===s.day)||{}).label||s.day}</span>
         <span class="stime">${t}</span>
         <button class="sx" data-k="${s.key}">✕</button>
       </div>
@@ -1414,7 +1433,12 @@ const EX_MUSCLES={
   'rear delt fly':{m:['rearDelts'],s:[]},
   'neutral-grip lat pulldown':{m:['lats'],s:['biceps','upperBack']},
   "farmer's carry":{m:['forearms'],s:['upperBack']},
-  'bulgarian split squat':{m:['quads'],s:['glutes','hams']}
+  'bulgarian split squat':{m:['quads'],s:['glutes','hams']},
+  'chin-up':{m:['lats'],s:['biceps']}, 'chin-ups':{m:['lats'],s:['biceps']}, 'chinup':{m:['lats'],s:['biceps']}, 'chin up':{m:['lats'],s:['biceps']}, 'underhand pull-up':{m:['lats'],s:['biceps']},
+  'hip abduction':{m:['glutes'],s:[]}, 'abductor':{m:['glutes'],s:[]}, 'abductor machine':{m:['glutes'],s:[]}, 'hip abduction machine':{m:['glutes'],s:[]}, 'seated hip abduction':{m:['glutes'],s:[]}, 'hip abductor':{m:['glutes'],s:[]},
+  'glute kickback':{m:['glutes'],s:[]}, 'cable kickback':{m:['glutes'],s:[]}, 'kickback':{m:['glutes'],s:[]}, 'cable glute kickback':{m:['glutes'],s:[]},
+  'hip thrust':{m:['glutes'],s:['hams']}, 'barbell hip thrust':{m:['glutes'],s:['hams']}, 'glute bridge':{m:['glutes'],s:['hams']},
+  'lateral raise':{m:['sideDelts'],s:[]}, 'side lateral raise':{m:['sideDelts'],s:[]}, 'db lateral raise':{m:['sideDelts'],s:[]}, 'dumbbell lateral raises':{m:['sideDelts'],s:[]}, 'cable lateral raises':{m:['sideDelts'],s:[]}, 'lateral raises':{m:['sideDelts'],s:[]}
 };
 function muscleVolume(days){
   days=days||7;
