@@ -1447,6 +1447,31 @@ const EX_MUSCLES={
   'lateral raise':{m:['sideDelts'],s:[]}, 'side lateral raise':{m:['sideDelts'],s:[]}, 'db lateral raise':{m:['sideDelts'],s:[]}, 'dumbbell lateral raises':{m:['sideDelts'],s:[]}, 'cable lateral raises':{m:['sideDelts'],s:[]}, 'lateral raises':{m:['sideDelts'],s:[]},
   'front raise':{m:['frontDelts'],s:[]}, 'front raises':{m:['frontDelts'],s:[]}, 'front lateral raise':{m:['frontDelts'],s:[]}, 'front lateral raises':{m:['frontDelts'],s:[]}, 'dumbbell front raise':{m:['frontDelts'],s:[]}, 'cable front raise':{m:['frontDelts'],s:[]}, 'plate front raise':{m:['frontDelts'],s:[]}
 };
+// fallback: infer muscles from keywords in the exercise name when there's no exact map entry
+function inferMuscles(nm){
+  const s=(nm||'').toLowerCase();
+  const any=(...w)=>w.some(x=>s.includes(x));
+  const both=(a,b)=>s.includes(a)&&s.includes(b);
+  if(any('front raise')||both('front','raise')) return {m:['frontDelts'],s:[]};
+  if(any('rear delt','reverse fly','reverse pec','rear fly')||both('rear','delt')) return {m:['rearDelts'],s:[]};
+  if(any('face pull')) return {m:['rearDelts'],s:['upperBack']};
+  if(any('lateral raise','lat raise','side raise')||both('side','raise')) return {m:['sideDelts'],s:[]};
+  if(any('shoulder press','overhead press','ohp','military press','arnold press')) return {m:['frontDelts'],s:['sideDelts','triceps']};
+  if(any('shrug')) return {m:['upperBack'],s:[]};
+  if(any('calf','calve')) return {m:['calves'],s:[]};
+  if(any('leg curl','ham curl','hamstring curl','nordic')) return {m:['hams'],s:[]};
+  if(any('leg extension','quad extension','knee extension')) return {m:['quads'],s:[]};
+  if(any('hip thrust','glute bridge','kickback','abduction','abductor','frog pump','glute')) return {m:['glutes'],s:[]};
+  if(any('rdl','romanian','deadlift','good morning','pull-through','pull through')) return {m:['hams'],s:['glutes']};
+  if(any('squat','leg press','lunge','hack','step up','step-up','sissy')) return {m:['quads'],s:['glutes']};
+  if(any('wrist','forearm','farmer','grip')) return {m:['forearms'],s:[]};
+  if(any('hammer curl')) return {m:['biceps'],s:['forearms']};
+  if(s.includes('curl')) return {m:['biceps'],s:[]};
+  if(any('tricep','pushdown','skull','dip')||both('overhead','extension')) return {m:['triceps'],s:[]};
+  if(any('row','pulldown','pull-up','pullup','pull up','chin','pullover')) return {m:['lats'],s:['biceps','upperBack']};
+  if(any('reverse pec','pec deck','chest press','bench','fly','flye')||both('incline','press')||s.includes('chest')) return {m:['chest'],s:['frontDelts','triceps']};
+  return null;
+}
 function muscleVolume(days){
   days=days||7;
   const t=new Date(), cutoff=new Date(t.getFullYear(),t.getMonth(),t.getDate()-(days-1));
@@ -1457,7 +1482,7 @@ function muscleVolume(days){
     if(new Date(y,m-1,d)<cutoff) return;
     (s.entries||[]).forEach(e=>{
       const n=(e.sets||[]).length; if(!n) return;
-      const tag=EX_MUSCLES[(e.nm||'').trim().toLowerCase()];
+      const tag=EX_MUSCLES[(e.nm||'').trim().toLowerCase()] || inferMuscles(e.nm);
       if(!tag){ untagged+=n; return; }
       (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=n; });
       (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=n*0.5; });
@@ -1495,7 +1520,7 @@ function renderGaps(totals){
   (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
     const nm=(e.nm||'').trim(), key=nm.toLowerCase();
     if(!nm || seen.has(key)) return; seen.add(key);
-    const tag=EX_MUSCLES[key]; if(!tag) return;
+    const tag=EX_MUSCLES[key] || inferMuscles(nm); if(!tag) return;
     (tag.m||[]).forEach(mk=>{ (byMuscle[mk]=byMuscle[mk]||[]).push(nm); });
   }));
   if(!low.length){ box.innerHTML=`<div class="gaps"><div class="gdone">Everything's covered this week — no gaps to chase. Hold your split.</div></div>`; return; }
