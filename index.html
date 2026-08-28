@@ -635,6 +635,10 @@ function patchExerciseOptions(){
       const curlIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='seated leg curl');
       legs.ex.splice(curlIdx>=0?curlIdx+1:legs.ex.length,0,...gadd);
     }
+    if(!gl('leg extension')){
+      const lpIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='leg press');
+      legs.ex.splice(lpIdx>=0?lpIdx+1:legs.ex.length,0,{id:'g9',nm:'Leg extension',pr:'3 × 12–20',cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep.'});
+    }
   }
 }
 async function save(){
@@ -819,6 +823,7 @@ const DEFAULT_W=[
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
   {id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'},
   {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
+  {id:'g9',nm:'Leg extension',pr:'3 × 12–20',cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep.'},
   {id:'g4',nm:'Seated leg curl',pr:'3 × 10–15',cue:'Hamstrings grow best seated — more stretch than lying.'},
   {id:'g7',nm:'Hip Abduction',pr:'3 × 12–20',cue:'Glute medius, fully seated — zero spinal load, safe on a cranky back. Push knees out against the pads, lean forward slightly to bias the glutes, pause at the end range. Controlled, no snapping back.'},
   {id:'g8',nm:'Glute Kickback',pr:'3 × 12–20',cue:'Glute max isolation, standing, no load on the spine. Cuff or low cable, drive the heel straight back and up, squeeze at the top, control the return. Lower back stays still — the movement is all hip.'},
@@ -1426,6 +1431,7 @@ const EX_MUSCLES={
   'romanian deadlift':{m:['hams'],s:['glutes']},
   'standing cable rdl / pull-through':{m:['hams'],s:['glutes']},
   'leg press':{m:['quads'],s:['glutes']},
+  'leg extension':{m:['quads'],s:[]}, 'leg extensions':{m:['quads'],s:[]}, 'seated leg extension':{m:['quads'],s:[]}, 'quad extension':{m:['quads'],s:[]},
   'seated leg curl':{m:['hams'],s:[]},
   'standing calf raise':{m:['calves'],s:[]},
   'standing overhead press':{m:['frontDelts'],s:['sideDelts','triceps']},
