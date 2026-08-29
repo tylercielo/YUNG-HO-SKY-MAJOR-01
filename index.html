@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -305,6 +305,11 @@
   .gaprow .gv{font-family:'Jost',monospace;font-size:11px;color:var(--dim);margin-left:6px;}
   .gaprow .gx{font-size:12.5px;color:var(--steel);line-height:1.45;margin-top:2px;}
   .gaps .gdone{font-size:13px;color:var(--volt);}
+  .gx .glink{color:var(--flare);cursor:pointer;text-decoration:none;border-bottom:1px solid rgba(210,128,154,.45);}
+  .gx .glink:active{opacity:.55;}
+  @keyframes exFlash{0%{background:rgba(210,128,154,.18);}100%{background:transparent;}}
+  .ex.flash{animation:exFlash 1.5s ease;border-radius:12px;}
+  @media (prefers-reduced-motion:reduce){.ex.flash{animation:none;}}
   .activesec{margin-top:6px;}
   .acttoday{margin-top:10px;min-height:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .acttoday .acttag{font-family:'Jost',monospace;font-size:12.5px;color:var(--volt);}
@@ -551,6 +556,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:.8;">build 4 · no swipe · tap-to-jump</div>
   </div>
 </div>
 
@@ -667,45 +673,12 @@ function setActiveTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
   t.classList.add('on');
 }
-function selectTab(t){
-  if(!t || animating) return;
-  const curTab=TABS.find(x=>x.classList.contains('on'));
-  const curIdx=TABS.indexOf(curTab), idx=TABS.indexOf(t);
-  const cur = curTab ? document.getElementById('p-'+curTab.dataset.p) : null;
-  const next = document.getElementById('p-'+t.dataset.p);
-  if(cur===next){ setActiveTab(t); return; }
-  const dir = idx>curIdx ? 1 : (idx<curIdx ? -1 : 0);
-  const h0 = cur ? cur.offsetHeight : 0;      // measure while cur is still visible
+function selectTab(t, keepScroll){
+  if(!t) return;
   setActiveTab(t);
-  // SOURCE OF TRUTH: the correct panel is active immediately, before any animation
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-  next.classList.add('on');
-  if(!dir || !cur || reduceMotion) return;    // no slide needed — panel is already right
-  const h1=next.offsetHeight;
-  animating=true;
-  window.scrollTo(0,0);
-  cur.classList.add('leaving');               // keep the outgoing panel on screen for the slide only
-  PANELS.classList.add('sliding');
-  PANELS.style.height=Math.max(h0,h1)+'px';
-  cur.style.transform='translateX(0)';
-  next.style.transform='translateX('+(dir>0?100:-100)+'%)';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    cur.style.transition=next.style.transition='transform .28s cubic-bezier(.4,0,.2,1)';
-    cur.style.transform='translateX('+(dir>0?-100:100)+'%)';
-    next.style.transform='translateX(0)';
-  }));
-  const done=(e)=>{
-    if(e && (e.target!==next || (e.propertyName && e.propertyName!=='transform'))) return; // ignore bubbled child transitions
-    if(!animating) return;
-    animating=false;
-    next.removeEventListener('transitionend',done);
-    [cur,next].forEach(p=>{ p.style.transition=''; p.style.transform=''; });
-    cur.classList.remove('leaving');
-    PANELS.classList.remove('sliding');
-    PANELS.style.height='';
-  };
-  next.addEventListener('transitionend',done);
-  setTimeout(()=>done(),520); // fallback if transitionend doesn't fire
+  document.getElementById('p-'+t.dataset.p).classList.add('on');
+  if(!keepScroll) window.scrollTo(0,0);
 }
 TABS.forEach(t=>t.addEventListener('click',()=>selectTab(t)));
 
@@ -777,24 +750,6 @@ document.getElementById('nudgeX').addEventListener('click',()=>{
   nudgeDismissed=true;
   document.getElementById('nudge').style.display='none';
 });
-
-/* swipe left/right to move between tabs */
-let swX=0, swY=0, swT=0;
-document.addEventListener('touchstart',e=>{
-  const t=e.changedTouches[0]; swX=t.clientX; swY=t.clientY; swT=Date.now();
-},{passive:true});
-document.addEventListener('touchend',e=>{
-  const t=e.changedTouches[0];
-  const dx=t.clientX-swX, dy=t.clientY-swY, dt=Date.now()-swT;
-  if(dt>700) return;                          // too slow to be a flick
-  if(Math.abs(dx)<60) return;                 // not far enough sideways
-  if(Math.abs(dx)<Math.abs(dy)*1.5) return;   // too vertical — that's a scroll
-  const cur=TABS.findIndex(x=>x.classList.contains('on'));
-  if(cur<0) return;
-  const next=cur+(dx<0?1:-1);                 // swipe left → next tab
-  if(next<0||next>=TABS.length) return;       // stop at the ends, no wrap
-  selectTab(TABS[next]);
-},{passive:true});
 
 /* ================= TRAIN ================= */
 const DEFAULT_W=[
@@ -976,7 +931,7 @@ function renderEx(){
     ).join('')}</div>` : '';
     const varRow = e.v ? `<div class="vars" data-id="${e.id}">${e.v.map((o,i)=>
       `<button class="vchip ${i===0?'on':''}" data-id="${e.id}" data-v="${o}">${o}</button>`).join('')}</div>` : '';
-    return `<div class="ex">
+    return `<div class="ex" data-ex="${e.id}">
       <div class="head"><span class="nm">${e.nm}</span><span class="pres">${e.pr||''}</span></div>
       ${e.cue?`<div class="cue">${e.cue}</div>`:''}
       <div class="beat ${prev?'fresh':'empty'}">
@@ -1525,11 +1480,35 @@ function renderGaps(totals){
   }));
   if(!low.length){ box.innerHTML=`<div class="gaps"><div class="gdone">Everything's covered this week — no gaps to chase. Hold your split.</div></div>`; return; }
   const rows=low.map((m,i)=>{
-    const ex=(byMuscle[m.k]||[]).slice(0,3).join(' · ') || 'no lift mapped for this yet';
+    const lifts=(byMuscle[m.k]||[]).slice(0,3);
+    const ex = lifts.length
+      ? lifts.map(nm=>`<a class="glink" data-nm="${nm.replace(/"/g,'&quot;')}">${nm}</a>`).join(' · ')
+      : 'no lift mapped for this yet';
     const val=Number.isInteger(m.v)?m.v:m.v.toFixed(1);
     return `<div class="gaprow"><span class="gi">${i+1}</span><div class="gbody"><div class="gm">${m.label}<span class="gv">${val} set${m.v===1?'':'s'}</span></div><div class="gx">${ex}</div></div></div>`;
   }).join('');
-  box.innerHTML=`<div class="gaps"><div class="gh">Fill the gaps · worst first</div>${rows}</div>`;
+  box.innerHTML=`<div class="gaps"><div class="gh">Fill the gaps · worst first · tap a lift to jump to it</div>${rows}</div>`;
+  box.querySelectorAll('.glink').forEach(a=>a.addEventListener('click',()=>goToExercise(a.dataset.nm)));
+}
+// jump from a gap suggestion straight to that exercise on the Train tab
+function goToExercise(nm){
+  const key=(nm||'').trim().toLowerCase();
+  let foundDay=null, foundId=null;
+  for(const d of (S.workouts||[])){
+    const e=(d.ex||[]).find(x=>(x.nm||'').trim().toLowerCase()===key);
+    if(e){ foundDay=d.id; foundId=e.id; break; }
+  }
+  if(!foundDay) return;
+  day=foundDay;
+  renderDays(); renderEx();
+  selectTab(TABS[0], true); // Train, keep scroll — we'll scroll to the exercise ourselves
+  requestAnimationFrame(()=>{
+    const elx=document.querySelector(`.ex[data-ex="${foundId}"]`);
+    if(elx){
+      elx.scrollIntoView({behavior:'smooth', block:'center'});
+      elx.classList.remove('flash'); void elx.offsetWidth; elx.classList.add('flash');
+    }
+  });
 }
 
 /* colour each workout type distinctly on the day map */
