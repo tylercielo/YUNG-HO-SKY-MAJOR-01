@@ -279,6 +279,11 @@
   /* goal history heatmap */
   .goalsec{margin-top:24px;padding-top:20px;border-top:1px solid var(--edge);}
   .heat{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:14px;}
+  #wdGrid{grid-template-columns:repeat(7,1fr);margin-top:6px;}
+  #goals{grid-template-columns:repeat(7,1fr);margin-top:6px;}
+  .heatdow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:16px;}
+  .heatdow span{text-align:center;font-size:10px;letter-spacing:.08em;color:var(--dim);font-weight:500;}
+  .cell.future{background:transparent;border:1px dashed var(--edge);opacity:.5;cursor:default;}
   .heat .cell{aspect-ratio:1;border-radius:5px;cursor:pointer;border:1px solid transparent;padding:0;transition:transform .1s;}
   .heat .cell:hover{transform:scale(1.12);}
   .heat .cell.today{outline:2px solid var(--paper);outline-offset:1px;}
@@ -461,8 +466,9 @@
       <div class="foods" id="foods"></div>
 
       <div class="goalsec">
-        <div class="qhead"><span class="eyebrow">Goal history · last 30 days</span></div>
+        <div class="qhead"><span class="eyebrow">Goal history · last 5 weeks</span></div>
         <div class="stats" id="goalStats"></div>
+        <div class="heatdow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
         <div class="heat" id="goals"></div>
         <div class="heatleg">
           <span><i class="sw g-both"></i>both hit</span>
@@ -521,8 +527,9 @@
           </div>
           <div class="acttoday" id="actToday"></div>
         </div>
-        <div class="qhead" style="margin-top:20px;"><span class="eyebrow">Workout days · last 30 days</span></div>
+        <div class="qhead" style="margin-top:20px;"><span class="eyebrow">Workout days · last 5 weeks</span></div>
         <div class="stats" id="wdStats"></div>
+        <div class="heatdow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
         <div class="heat" id="wdGrid"></div>
         <div class="heatleg" id="wdLegend"></div>
         <div class="goaldetail" id="wdDetail">Tap a day to see what you did.</div>
@@ -558,7 +565,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 5 · readable footer · weigh-in history</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 8 · calendar food + workouts</div>
   </div>
 </div>
 
@@ -632,6 +639,18 @@ function patchExerciseOptions(){
   if(pull && Array.isArray(pull.ex) && !pull.ex.some(e=>(e.nm||'').trim().toLowerCase()==='chin-up')){
     const puIdx=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='wide-grip pull-up or pulldown');
     pull.ex.splice(puIdx>=0?puIdx+1:0,0,{id:'l12',nm:'Chin-up',pr:'4 × 6–12',cue:'Underhand, shoulder-width. The bicep-heavy vertical pull — lats and biceps together. Full hang at the bottom, drive your chest to the bar.'});
+  }
+  // add the back-friendly row options to Pull, grouped after the chest-supported row
+  if(pull && Array.isArray(pull.ex)){
+    const pl=nm=>pull.ex.some(e=>(e.nm||'').trim().toLowerCase()===nm);
+    const radd2=[];
+    if(!pl('seated cable row')) radd2.push({id:'l13',nm:'Seated Cable Row',pr:'3 × 8–12',cue:'Upper-back builder. Retract the shoulder blades and squeeze them together at the end of each rep — don\'t just yank with your arms. Lead from the shoulder blades, control the return. Chest tall, minimal lower-back involvement.'});
+    if(!pl('single-arm dumbbell row')) radd2.push({id:'l14',nm:'Single-Arm Dumbbell Row',pr:'3 × 8–12 ea',cue:'Upper back + lats. Brace on a bench, row the dumbbell to your hip, squeeze the shoulder blade back at the top. Control the lowering.'});
+    if(!pl('t-bar / lever row')) radd2.push({id:'l15',nm:'T-Bar / Lever Row',pr:'3 × 8–12',cue:'Upper-back thickness, machine-supported. Drive elbows back, squeeze shoulder blades together, chest stays on the pad.'});
+    if(radd2.length){
+      const rowIdx2=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='chest-supported row');
+      pull.ex.splice(rowIdx2>=0?rowIdx2+1:pull.ex.length,0,...radd2);
+    }
   }
   // add back-safe glute isolation to Legs if missing
   if(legs && Array.isArray(legs.ex)){
@@ -766,6 +785,9 @@ const DEFAULT_W=[
   {id:'l1',nm:'Wide-grip pull-up or pulldown',pr:'4 × 6–12',cue:'Widest grip you actually control. Drive elbows down toward your hips.'},
   {id:'l12',nm:'Chin-up',pr:'4 × 6–12',cue:'Underhand, shoulder-width. The bicep-heavy vertical pull — lats and biceps together. Full hang at the bottom, drive your chest to the bar.'},
   {id:'l2',nm:'Chest-supported row',pr:'3 × 8–12',cue:'Thickness. Chest stays on the pad — no cheating with your hips.'},
+  {id:'l13',nm:'Seated Cable Row',pr:'3 × 8–12',cue:'Upper-back builder. Retract the shoulder blades and squeeze them together at the end of each rep — don\'t just yank with your arms. Lead from the shoulder blades, control the return. Chest tall, minimal lower-back involvement.'},
+  {id:'l14',nm:'Single-Arm Dumbbell Row',pr:'3 × 8–12 ea',cue:'Upper back + lats. Brace on a bench, row the dumbbell to your hip, squeeze the shoulder blade back at the top. Control the lowering.'},
+  {id:'l15',nm:'T-Bar / Lever Row',pr:'3 × 8–12',cue:'Upper-back thickness, machine-supported. Drive elbows back, squeeze shoulder blades together, chest stays on the pad.'},
   {id:'l8',nm:'Incline DB curl',pr:'3 × 8–12',cue:'Biceps peak and stretch. Bench at 45°, arms hang behind you, palms up. The stretch at the bottom does the work. No swinging.'},
   {id:'l9',nm:'Bayesian curl',pr:'3 × 10–15',cue:'Biceps under constant stretch. Stand a step ahead of a low pulley, arm drawn behind your body, palm up. Don\'t let the elbow drift forward.'},
   {id:'l3',nm:'Straight-arm pulldown',pr:'3 × 12–15',cue:'Lats only. Elbows locked, sweep the bar to your thighs.'},
@@ -1195,26 +1217,34 @@ function dayTotals(list){
 }
 function renderGoals(){
   const grid=document.getElementById('goals'); if(!grid) return;
-  const N=30, today=new Date(), todayKeyStr=tk(), days=[];
-  for(let k=N-1;k>=0;k--){
-    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-k);
+  const todayKeyStr=tk();
+  const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const dow=today.getDay();
+  const WEEKS=5;
+  const start=new Date(today.getFullYear(),today.getMonth(),today.getDate()-dow-7*(WEEKS-1));
+  const days=[];
+  for(let i=0;i<WEEKS*7;i++){
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
     const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    days.push({d,key,st:dayTotals(S.food[key])});
+    const future=d>today;
+    days.push({d,key,future,st:future?{}:dayTotals(S.food[key])});
   }
-  const proDays=days.filter(x=>x.st.pro).length;
-  const calDays=days.filter(x=>x.st.cal).length;
-  const bothDays=days.filter(x=>x.st.pro&&x.st.cal).length;
+  const past=days.filter(x=>!x.future);
+  const proDays=past.filter(x=>x.st.pro).length;
+  const calDays=past.filter(x=>x.st.cal).length;
+  const bothDays=past.filter(x=>x.st.pro&&x.st.cal).length;
   document.getElementById('goalStats').innerHTML=
     `<div class="st"><div class="v">${bothDays}</div><div class="l">both hit</div></div>`+
     `<div class="st"><div class="v">${proDays}</div><div class="l">protein days</div></div>`+
     `<div class="st"><div class="v">${calDays}</div><div class="l">calorie days</div></div>`;
   grid.innerHTML=days.map((x,i)=>{
+    if(x.future) return `<button class="cell future" disabled></button>`;
     const cls = x.st.pro&&x.st.cal ? 'g-both' : (x.st.pro||x.st.cal ? 'g-part' : (x.st.logged ? 'g-miss':'g-none'));
     const t = x.key===todayKeyStr ? ' today' : '';
     return `<button class="cell ${cls}${t}" data-i="${i}"></button>`;
   }).join('');
   const detail=document.getElementById('goalDetail');
-  grid.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
+  grid.querySelectorAll('.cell:not(.future)').forEach(b=>b.addEventListener('click',()=>{
     const x=days[+b.dataset.i];
     const lbl=x.d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
     if(!x.st.logged){ detail.innerHTML=`${lbl} · <span class="miss">nothing logged</span>`; return; }
@@ -1385,6 +1415,9 @@ const EX_MUSCLES={
   'overhead triceps extension':{m:['triceps'],s:[]},
   'wide-grip pull-up or pulldown':{m:['lats'],s:['biceps','upperBack']},
   'chest-supported row':{m:['upperBack'],s:['lats','biceps','rearDelts']},
+  'seated cable row':{m:['upperBack'],s:['lats','biceps','rearDelts']}, 'cable row':{m:['upperBack'],s:['lats','biceps']}, 'seated row':{m:['upperBack'],s:['lats','biceps']},
+  'single-arm dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'single arm dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'one-arm dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'db row':{m:['upperBack'],s:['lats','biceps']}, 'one arm row':{m:['upperBack'],s:['lats','biceps']},
+  't-bar / lever row':{m:['upperBack'],s:['lats','biceps']}, 't-bar row':{m:['upperBack'],s:['lats','biceps']}, 'tbar row':{m:['upperBack'],s:['lats','biceps']}, 'lever row':{m:['upperBack'],s:['lats','biceps']}, 'machine row':{m:['upperBack'],s:['lats','biceps']}, 'hammer row':{m:['upperBack'],s:['lats','biceps']},
   'incline db curl':{m:['biceps'],s:[]},
   'bayesian curl':{m:['biceps'],s:[]},
   'straight-arm pulldown':{m:['lats'],s:[]},
@@ -1431,11 +1464,12 @@ function inferMuscles(nm){
   if(any('hip thrust','glute bridge','kickback','abduction','abductor','frog pump','glute')) return {m:['glutes'],s:[]};
   if(any('rdl','romanian','deadlift','good morning','pull-through','pull through')) return {m:['hams'],s:['glutes']};
   if(any('squat','leg press','lunge','hack','step up','step-up','sissy')) return {m:['quads'],s:['glutes']};
-  if(any('wrist','forearm','farmer','grip')) return {m:['forearms'],s:[]};
+  if(any('wrist','forearm','farmer')) return {m:['forearms'],s:[]};
   if(any('hammer curl')) return {m:['biceps'],s:['forearms']};
   if(s.includes('curl')) return {m:['biceps'],s:[]};
   if(any('tricep','pushdown','skull','dip')||both('overhead','extension')) return {m:['triceps'],s:[]};
-  if(any('row','pulldown','pull-up','pullup','pull up','chin','pullover')) return {m:['lats'],s:['biceps','upperBack']};
+  if(/\brows?\b/.test(s)) return {m:['upperBack'],s:['lats','biceps']};
+  if(any('pulldown','pull-up','pullup','pull up','chin','pullover','lat prayer')) return {m:['lats'],s:['biceps','upperBack']};
   if(any('reverse pec','pec deck','chest press','bench','fly','flye')||both('incline','press')||s.includes('chest')) return {m:['chest'],s:['frontDelts','triceps']};
   return null;
 }
@@ -1535,22 +1569,30 @@ function dayColor(id){
 }
 function renderWorkoutDays(){
   const grid=document.getElementById('wdGrid'); if(!grid) return;
-  const N=30, today=new Date(), todayStr=tk(), days=[];
-  for(let k=N-1;k>=0;k--){
-    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-k);
+  const todayStr=tk();
+  const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const dow=today.getDay(); // 0=Sun … aligns columns to the weekday
+  const WEEKS=5;
+  const start=new Date(today.getFullYear(),today.getMonth(),today.getDate()-dow-7*(WEEKS-1));
+  const cells=[];
+  for(let i=0;i<WEEKS*7;i++){
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
     const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    const sess=(S.sessions||[]).filter(s=>s.date===key);
-    const active=(S.active||{})[key]!==undefined;
-    days.push({d,key,sess,active,trained:sess.length>0});
+    const future=d>today;
+    const sess=future?[]:(S.sessions||[]).filter(s=>s.date===key);
+    const active=future?false:((S.active||{})[key]!==undefined);
+    cells.push({d,key,future,sess,active,trained:sess.length>0});
   }
-  const trained=days.filter(x=>x.trained).length;
-  const activeDays=days.filter(x=>x.active&&!x.trained).length;
-  const perWeek=(trained/N*7).toFixed(1);
+  const past=cells.filter(c=>!c.future);
+  const trained=past.filter(c=>c.trained).length;
+  const activeDays=past.filter(c=>c.active&&!c.trained).length;
+  const perWeek=(trained/(past.length/7)).toFixed(1);
   document.getElementById('wdStats').innerHTML=
     `<div class="st"><div class="v">${trained}</div><div class="l">lift days</div></div>`+
     `<div class="st"><div class="v">${activeDays}</div><div class="l">active days</div></div>`+
     `<div class="st"><div class="v">${perWeek}</div><div class="l">lifts / week</div></div>`;
-  grid.innerHTML=days.map((x,i)=>{
+  grid.innerHTML=cells.map((x,i)=>{
+    if(x.future) return `<button class="cell future" disabled></button>`;
     const t = x.key===todayStr ? ' today' : '';
     if(x.trained){
       const col=dayColor(x.sess[0]&&x.sess[0].day);
@@ -1559,15 +1601,14 @@ function renderWorkoutDays(){
     const cls = x.active ? 'g-cardio' : 'g-none';
     return `<button class="cell ${cls}${t}" data-i="${i}"></button>`;
   }).join('');
-  // legend reflects the actual workout days + cardio + rest
   const leg=document.getElementById('wdLegend');
   if(leg){
     leg.innerHTML = (S.workouts||[]).map(w=>`<span><i class="sw" style="background:${dayColor(w.id)}"></i>${w.label}</span>`).join('')
       + `<span><i class="sw g-cardio"></i>cardio</span><span><i class="sw g-none"></i>rest</span>`;
   }
   const detail=document.getElementById('wdDetail');
-  grid.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
-    const x=days[+b.dataset.i];
+  grid.querySelectorAll('.cell:not(.future)').forEach(b=>b.addEventListener('click',()=>{
+    const x=cells[+b.dataset.i];
     const lbl=x.d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
     if(!x.trained){
       if(x.active){ const n=(S.active||{})[x.key]; detail.innerHTML=`${lbl} · <b>Active</b>${n?' · '+n:''}`; }
