@@ -565,7 +565,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 8 · calendar food + workouts</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 9 · incline/flat press toggle</div>
   </div>
 </div>
 
@@ -604,6 +604,15 @@ async function load(){
 function patchExerciseOptions(){
   (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
     if(e && (e.nm||'').trim().toLowerCase()==='leg press' && e.v) delete e.v;
+  }));
+  // give the presses an incline/flat toggle (rename to angle-neutral in existing data)
+  const PRESS={
+    'incline dumbbell press':{nm:'Dumbbell press',v:['Incline','Flat']},
+    'flat barbell bench':{nm:'Barbell bench',v:['Flat','Incline']}
+  };
+  (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
+    const r=PRESS[(e.nm||'').trim().toLowerCase()];
+    if(r){ e.nm=r.nm; if(!e.v) e.v=r.v.slice(); }
   }));
   // add the Dead hang (timed) to Pull day if it isn't there yet
   const pull=(S.workouts||[]).find(d=>d.id==='pull');
@@ -775,8 +784,8 @@ document.getElementById('nudgeX').addEventListener('click',()=>{
 /* ================= TRAIN ================= */
 const DEFAULT_W=[
  {id:'push',label:'Push',ex:[
-  {id:'p1',nm:'Incline dumbbell press',pr:'4 × 6–10',cue:'Upper chest. Bench at 30°, not higher — steeper turns it into a shoulder press.'},
-  {id:'p2',nm:'Flat barbell bench',pr:'3 × 6–10',cue:'Elbows about 45° from your ribs, bar to lower chest.'},
+  {id:'p1',nm:'Dumbbell press',pr:'4 × 6–10',v:['Incline','Flat'],cue:'Toggle incline or flat. Incline (~30°, not steeper or it becomes a shoulder press) biases upper chest; flat hits it all. Elbows about 45° from your ribs, control the stretch at the bottom.'},
+  {id:'p2',nm:'Barbell bench',pr:'3 × 6–10',v:['Flat','Incline'],cue:'Toggle flat or incline. Elbows about 45° from your ribs, bar to lower chest on flat, upper chest on incline. Controlled, full range.'},
   {id:'p3',nm:'Seated dumbbell shoulder press',pr:'3 × 8–12',cue:'Press without arching. Stop just short of locking out.'},
   {id:'p4',nm:'Cable lateral raise',pr:'4 × 12–20',v:['Lat','Front','Rear'],cue:'Side delts are the width in the taper. Light, slow, high reps, no swing.'},
   {id:'p5',nm:'Cable fly',pr:'3 × 12–15',v:['High','Mid','Low'],cue:'Chase the stretch at the bottom, not the squeeze at the top.'},
@@ -812,7 +821,7 @@ const DEFAULT_W=[
   {id:'t2',nm:'Dumbbell lateral raise',pr:'4 × 12–20',cue:'Second side-delt dose this week. Lean forward slightly, lead with the elbow.'},
   {id:'t3',nm:'Rear delt fly',pr:'3 × 15–20',v:['High','Mid','Low'],cue:'Rear delts finish the round shoulder from behind and the side.'},
   {id:'t4',nm:'Neutral-grip lat pulldown',pr:'3 × 10–12',cue:'Different grip than Monday — hits the lat at a new angle.'},
-  {id:'t5',nm:'Incline dumbbell press',pr:'3 × 8–12',cue:'Chest\'s second dose this week. Lighter than Monday — this is volume, not a max effort.'},
+  {id:'t5',nm:'Dumbbell press',pr:'3 × 8–12',v:['Incline','Flat'],cue:'Chest\'s second dose this week — lighter than Monday, this is volume not a max. Toggle incline or flat.'},
   {id:'t6',nm:'Farmer\'s carry',pr:'3 × 30–40 yd',cue:'Heaviest dumbbells you can hold. Forearms, grip, and traps at once.'},
   {id:'t7',nm:'Bulgarian split squat',pr:'2 × 10 ea',cue:'The leg insurance so you\'re not all top. Skip only if legs was yesterday.'}]}
 ];
@@ -1409,6 +1418,8 @@ const MUSCLES={
 const EX_MUSCLES={
   'incline dumbbell press':{m:['chest'],s:['frontDelts','triceps']},
   'flat barbell bench':{m:['chest'],s:['frontDelts','triceps']},
+  'dumbbell press':{m:['chest'],s:['frontDelts','triceps']},
+  'barbell bench':{m:['chest'],s:['frontDelts','triceps']},
   'seated dumbbell shoulder press':{m:['frontDelts'],s:['sideDelts','triceps']},
   'cable lateral raise':{m:['sideDelts'],s:[]},
   'cable fly':{m:['chest'],s:[]},
