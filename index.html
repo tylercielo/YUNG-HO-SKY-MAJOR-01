@@ -565,7 +565,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 10 · leg extension L/R</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 12 · cable pull-through</div>
   </div>
 </div>
 
@@ -674,9 +674,13 @@ function patchExerciseOptions(){
     const legX=legs.ex.find(e=>(e.nm||'').trim().toLowerCase()==='leg extension');
     if(!legX){
       const lpIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='leg press');
-      legs.ex.splice(lpIdx>=0?lpIdx+1:legs.ex.length,0,{id:'g9',nm:'Leg extension',pr:'3 × 12–20',v:['Left','Right'],cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep. Toggle Left/Right for single-leg / MTS-style machines.'});
-    } else if(!legX.v){
-      legX.v=['Left','Right'];
+      legs.ex.splice(lpIdx>=0?lpIdx+1:legs.ex.length,0,{id:'g9',nm:'Leg extension',pr:'3 × 12–20',v:['Both','Left','Right'],cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep. Toggle Both / Left / Right — single-side counts as half a set, so unilateral and bilateral come out even.'});
+    } else if(!legX.v || !legX.v.includes('Both')){
+      legX.v=['Both','Left','Right'];
+    }
+    if(!gl('cable pull-through')){
+      const gkIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='glute kickback');
+      legs.ex.splice(gkIdx>=0?gkIdx+1:legs.ex.length,0,{id:'g10',nm:'Cable Pull-Through',pr:'3 × 12–15',cue:'Glute-focused hinge, easy on the spine. Rope between your legs from a low pulley, hips back into the stretch, then snap the hips forward and squeeze the glutes hard at the top. Let the cable pull you back — don\'t round the lower back.'});
     }
   }
 }
@@ -814,10 +818,11 @@ const DEFAULT_W=[
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
   {id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'},
   {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
-  {id:'g9',nm:'Leg extension',pr:'3 × 12–20',v:['Left','Right'],cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep. Toggle Left/Right for single-leg / MTS-style machines.'},
+  {id:'g9',nm:'Leg extension',pr:'3 × 12–20',v:['Both','Left','Right'],cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep. Toggle Both / Left / Right — single-side counts as half a set, so unilateral and bilateral come out even.'},
   {id:'g4',nm:'Seated leg curl',pr:'3 × 10–15',cue:'Hamstrings grow best seated — more stretch than lying.'},
   {id:'g7',nm:'Hip Abduction',pr:'3 × 12–20',cue:'Glute medius, fully seated — zero spinal load, safe on a cranky back. Push knees out against the pads, lean forward slightly to bias the glutes, pause at the end range. Controlled, no snapping back.'},
   {id:'g8',nm:'Glute Kickback',pr:'3 × 12–20',cue:'Glute max isolation, standing, no load on the spine. Cuff or low cable, drive the heel straight back and up, squeeze at the top, control the return. Lower back stays still — the movement is all hip.'},
+  {id:'g10',nm:'Cable Pull-Through',pr:'3 × 12–15',cue:'Glute-focused hinge, easy on the spine. Rope between your legs from a low pulley, hips back into the stretch, then snap the hips forward and squeeze the glutes hard at the top. Let the cable pull you back — don\'t round the lower back.'},
   {id:'g5',nm:'Standing calf raise',pr:'4 × 10–15',cue:'Full stretch at the bottom, pause a beat at the top.'}]},
  {id:'taper',label:'Taper',ex:[
   {id:'t1',nm:'Standing overhead press',pr:'4 × 5–8',cue:'The heavy shoulder day. Brace your abs so it doesn\'t become a lean-back.'},
@@ -1444,6 +1449,7 @@ const EX_MUSCLES={
   'back squat or hack squat':{m:['quads'],s:['glutes','hams']},
   'romanian deadlift':{m:['hams'],s:['glutes']},
   'standing cable rdl / pull-through':{m:['hams'],s:['glutes']},
+  'cable pull-through':{m:['glutes'],s:['hams']}, 'cable pull through':{m:['glutes'],s:['hams']}, 'pull-through':{m:['glutes'],s:['hams']}, 'pull through':{m:['glutes'],s:['hams']}, 'cable pullthrough':{m:['glutes'],s:['hams']},
   'leg press':{m:['quads'],s:['glutes']},
   'leg extension':{m:['quads'],s:[]}, 'leg extensions':{m:['quads'],s:[]}, 'seated leg extension':{m:['quads'],s:[]}, 'quad extension':{m:['quads'],s:[]},
   'seated leg curl':{m:['hams'],s:[]},
@@ -1496,11 +1502,13 @@ function muscleVolume(days){
     const [y,m,d]=s.date.split('-').map(Number);
     if(new Date(y,m-1,d)<cutoff) return;
     (s.entries||[]).forEach(e=>{
-      const n=(e.sets||[]).length; if(!n) return;
+      const sets=e.sets||[]; if(!sets.length) return;
       const tag=EX_MUSCLES[(e.nm||'').trim().toLowerCase()] || inferMuscles(e.nm);
-      if(!tag){ untagged+=n; return; }
-      (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=n; });
-      (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=n*0.5; });
+      if(!tag){ untagged+=sets.length; return; }
+      // a single-side (Left/Right) set works one limb → counts as half a muscle set
+      let w=0; sets.forEach(st=>{ w += (st.t==='Left'||st.t==='Right') ? 0.5 : 1; });
+      (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=w; });
+      (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=w*0.5; });
     });
   });
   return {totals,untagged};
