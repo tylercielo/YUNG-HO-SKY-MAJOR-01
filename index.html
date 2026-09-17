@@ -565,7 +565,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 12 · cable pull-through</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 14 · goblet squat</div>
   </div>
 </div>
 
@@ -672,6 +672,10 @@ function patchExerciseOptions(){
       legs.ex.splice(curlIdx>=0?curlIdx+1:legs.ex.length,0,...gadd);
     }
     const legX=legs.ex.find(e=>(e.nm||'').trim().toLowerCase()==='leg extension');
+    if(!legs.ex.some(e=>(e.nm||'').trim().toLowerCase()==='goblet squat')){
+      const sqIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='back squat or hack squat');
+      legs.ex.splice(sqIdx>=0?sqIdx+1:legs.ex.length,0,{id:'g11',nm:'Goblet squat',pr:'3 × 10–15',cue:'Dumbbell or kettlebell at your chest, sit straight down. Stays upright and easy on the low back — great for depth and a quad-focused pump.'});
+    }
     if(!legX){
       const lpIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='leg press');
       legs.ex.splice(lpIdx>=0?lpIdx+1:legs.ex.length,0,{id:'g9',nm:'Leg extension',pr:'3 × 12–20',v:['Both','Left','Right'],cue:'Quad isolation, zero spinal load. Full range, pause and squeeze at the top, control the negative. Point toes slightly out to bias the outer sweep. Toggle Both / Left / Right — single-side counts as half a set, so unilateral and bilateral come out even.'});
@@ -682,6 +686,16 @@ function patchExerciseOptions(){
       const gkIdx=legs.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='glute kickback');
       legs.ex.splice(gkIdx>=0?gkIdx+1:legs.ex.length,0,{id:'g10',nm:'Cable Pull-Through',pr:'3 × 12–15',cue:'Glute-focused hinge, easy on the spine. Rope between your legs from a low pulley, hips back into the stretch, then snap the hips forward and squeeze the glutes hard at the top. Let the cable pull you back — don\'t round the lower back.'});
     }
+  }
+  // add the Core day if it isn't there yet
+  if(!(S.workouts||[]).some(d=>d.id==='core' || (d.label||'').trim().toLowerCase()==='core')){
+    S.workouts.push({id:'core',label:'Core',ex:[
+      {id:'k1',nm:'Dead bug',pr:'3 × 8–10 ea',cue:'Anti-extension — the safest place to start. On your back, low back pressed flat into the floor, abs braced. Lower opposite arm and leg slowly; if your back arches off the floor, you went too far.'},
+      {id:'k2',nm:'Bird dog',pr:'3 × 8–10 ea',cue:'Stability without twisting (a McGill Big 3 move). On all fours, neutral spine, reach opposite arm and leg out long. Hips stay level — no rotating, no arching. Pause a beat.'},
+      {id:'k3',nm:'Front plank',pr:'3 × max hold',timed:true,cue:'Anti-extension hold. Squeeze glutes, brace hard, straight line head to heels — don\'t let the hips sag. Quality over minutes: stop when the brace breaks, not when you\'re shaking.'},
+      {id:'k4',nm:'Side plank',pr:'3 × max ea',timed:true,cue:'Obliques and lateral stability (McGill Big 3). Hips up, straight line, breathe. Do both sides. Drop to a knee if the full version is too much.'},
+      {id:'k5',nm:'Pallof press',pr:'3 × 10–12 ea',cue:'Anti-rotation — the money core lift for a healthy spine. Cable at chest height, stand side-on, press straight out and resist the pull trying to twist you. Brace; don\'t let your torso rotate.'}
+    ]});
   }
 }
 async function save(){
@@ -815,6 +829,7 @@ const DEFAULT_W=[
   {id:'l7',nm:'Dead hang',pr:'3 × max time',timed:true,cue:'Grip and decompression. Hang with shoulders active, breathe — beat your best time.'}]},
  {id:'legs',label:'Legs',ex:[
   {id:'g1',nm:'Back squat or hack squat',pr:'4 × 5–8',cue:'Whichever you can load without your low back taking over.'},
+  {id:'g11',nm:'Goblet squat',pr:'3 × 10–15',cue:'Dumbbell or kettlebell at your chest, sit straight down. Stays upright and easy on the low back — great for depth and a quad-focused pump.'},
   {id:'g2',nm:'Romanian deadlift',pr:'3 × 8–12',cue:'Hips back, soft knees, stop when the hamstrings run out of stretch.'},
   {id:'g6',nm:'Standing Cable RDL / Pull-through',pr:'3 × 10–15',cue:'Standing hinge with a low cable — same hips-back, hamstring-stretch pattern as the RDL, but the cable pulls horizontally instead of loading the spine, so it\'s easier on the lower back. Hips back, soft fixed knees, flat braced back, stop at the hamstring stretch. Back-friendlier hinge option.'},
   {id:'g3',nm:'Leg press',pr:'3 × 10–15',cue:'Feet mid-platform. Don\'t let your low back round off the seat.'},
@@ -831,7 +846,13 @@ const DEFAULT_W=[
   {id:'t4',nm:'Neutral-grip lat pulldown',pr:'3 × 10–12',cue:'Different grip than Monday — hits the lat at a new angle.'},
   {id:'t5',nm:'Dumbbell press',pr:'3 × 8–12',v:['Incline','Flat'],cue:'Chest\'s second dose this week — lighter than Monday, this is volume not a max. Toggle incline or flat.'},
   {id:'t6',nm:'Farmer\'s carry',pr:'3 × 30–40 yd',cue:'Heaviest dumbbells you can hold. Forearms, grip, and traps at once.'},
-  {id:'t7',nm:'Bulgarian split squat',pr:'2 × 10 ea',cue:'The leg insurance so you\'re not all top. Skip only if legs was yesterday.'}]}
+  {id:'t7',nm:'Bulgarian split squat',pr:'2 × 10 ea',cue:'The leg insurance so you\'re not all top. Skip only if legs was yesterday.'}]},
+ {id:'core',label:'Core',ex:[
+  {id:'k1',nm:'Dead bug',pr:'3 × 8–10 ea',cue:'Anti-extension — the safest place to start. On your back, low back pressed flat into the floor, abs braced. Lower opposite arm and leg slowly; if your back arches off the floor, you went too far.'},
+  {id:'k2',nm:'Bird dog',pr:'3 × 8–10 ea',cue:'Stability without twisting (a McGill Big 3 move). On all fours, neutral spine, reach opposite arm and leg out long. Hips stay level — no rotating, no arching. Pause a beat.'},
+  {id:'k3',nm:'Front plank',pr:'3 × max hold',timed:true,cue:'Anti-extension hold. Squeeze glutes, brace hard, straight line head to heels — don\'t let the hips sag. Quality over minutes: stop when the brace breaks, not when you\'re shaking.'},
+  {id:'k4',nm:'Side plank',pr:'3 × max ea',timed:true,cue:'Obliques and lateral stability (McGill Big 3). Hips up, straight line, breathe. Do both sides. Drop to a knee if the full version is too much.'},
+  {id:'k5',nm:'Pallof press',pr:'3 × 10–12 ea',cue:'Anti-rotation — the money core lift for a healthy spine. Cable at chest height, stand side-on, press straight out and resist the pull trying to twist you. Brace; don\'t let your torso rotate.'}]}
 ];
 // live workouts live in S.workouts (seeded from DEFAULT_W on first run); dayObj() resolves the current day
 function dayObj(){ return S.workouts.find(d=>d.id===day) || S.workouts[0]; }
@@ -904,7 +925,7 @@ let hangIv=null;
 function stopHangTimer(){ if(hangIv){ clearInterval(hangIv); hangIv=null; } }
 function toggleHangTimer(btn){
   const box=btn.closest('.inputs'); const rEl=box.querySelector('.r');
-  if(hangIv){ stopHangTimer(); btn.textContent='▶ Start hang'; btn.classList.remove('run'); return; }
+  if(hangIv){ stopHangTimer(); btn.textContent='▶ Start'; btn.classList.remove('run'); return; }
   const t0=Date.now(); rEl.value='0';
   btn.classList.add('run'); btn.textContent='■ Stop · 0s';
   hangIv=setInterval(()=>{ const s=Math.floor((Date.now()-t0)/1000); rEl.value=s; btn.textContent='■ Stop · '+fmtDur(s); },250);
@@ -979,11 +1000,11 @@ function renderEx(){
         <span class="lab">${prev?'beat this':'no log yet'}</span><span class="val">${val}</span>
       </div>
       ${rows}
-      <button class="logbtn" data-id="${e.id}">＋ ${e.timed?'add a hang':'add set'}</button>
+      <button class="logbtn" data-id="${e.id}">＋ ${e.timed?'add a hold':'add set'}</button>
       <div class="inputs" data-id="${e.id}">
         ${varRow}
         ${e.timed
-          ? `<button class="tmr" data-id="${e.id}">▶ Start hang</button>
+          ? `<button class="tmr" data-id="${e.id}">▶ Start</button>
              <div class="inrow">
                <input class="w" type="number" inputmode="decimal" placeholder="lb or blank">
                <input class="r" type="number" inputmode="numeric" placeholder="seconds">
@@ -1053,7 +1074,7 @@ function addSet(box){
   if(reopened){
     reopened.classList.add('show');
     if(tag) reopened.querySelectorAll(`.vchip[data-id="${id}"]`).forEach(x=>x.classList.toggle('on',x.dataset.v===tag));
-    if(ex&&ex.timed){ const t=reopened.querySelector('.tmr'); if(t){ t.textContent='▶ Start hang'; t.classList.remove('run'); } }
+    if(ex&&ex.timed){ const t=reopened.querySelector('.tmr'); if(t){ t.textContent='▶ Start'; t.classList.remove('run'); } }
     else reopened.querySelector('.w').focus();
   }
 }
@@ -1420,7 +1441,7 @@ function renderHistory(){
 const MUSCLES={
   chest:'Chest', frontDelts:'Front delts', sideDelts:'Side delts', rearDelts:'Rear delts',
   lats:'Lats', upperBack:'Upper back', biceps:'Biceps', triceps:'Triceps', forearms:'Forearms',
-  quads:'Quads', hams:'Hamstrings', glutes:'Glutes', calves:'Calves'
+  quads:'Quads', hams:'Hamstrings', glutes:'Glutes', calves:'Calves', core:'Core'
 };
 // each built-in lift → primary muscles (full set) + secondary (half set), keyed by name
 const EX_MUSCLES={
@@ -1460,6 +1481,8 @@ const EX_MUSCLES={
   'neutral-grip lat pulldown':{m:['lats'],s:['biceps','upperBack']},
   "farmer's carry":{m:['forearms'],s:['upperBack']},
   'bulgarian split squat':{m:['quads'],s:['glutes','hams']},
+  'goblet squat':{m:['quads'],s:['glutes']},
+  'dead bug':{m:['core'],s:[]}, 'bird dog':{m:['core'],s:[]}, 'front plank':{m:['core'],s:[]}, 'plank':{m:['core'],s:[]}, 'side plank':{m:['core'],s:[]}, 'pallof press':{m:['core'],s:[]}, 'pallof':{m:['core'],s:[]}, 'cable crunch':{m:['core'],s:[]}, 'crunch':{m:['core'],s:[]}, 'hanging leg raise':{m:['core'],s:[]}, 'hanging knee raise':{m:['core'],s:[]}, 'leg raise':{m:['core'],s:[]}, 'ab wheel':{m:['core'],s:[]}, 'hollow hold':{m:['core'],s:[]}, 'russian twist':{m:['core'],s:[]}, 'cable woodchop':{m:['core'],s:[]}, 'woodchop':{m:['core'],s:[]},
   'chin-up':{m:['lats'],s:['biceps']}, 'chin-ups':{m:['lats'],s:['biceps']}, 'chinup':{m:['lats'],s:['biceps']}, 'chin up':{m:['lats'],s:['biceps']}, 'underhand pull-up':{m:['lats'],s:['biceps']},
   'hip abduction':{m:['glutes'],s:[]}, 'abductor':{m:['glutes'],s:[]}, 'abductor machine':{m:['glutes'],s:[]}, 'hip abduction machine':{m:['glutes'],s:[]}, 'seated hip abduction':{m:['glutes'],s:[]}, 'hip abductor':{m:['glutes'],s:[]},
   'glute kickback':{m:['glutes'],s:[]}, 'cable kickback':{m:['glutes'],s:[]}, 'kickback':{m:['glutes'],s:[]}, 'cable glute kickback':{m:['glutes'],s:[]},
@@ -1478,6 +1501,7 @@ function inferMuscles(nm){
   if(any('lateral raise','lat raise','side raise')||both('side','raise')) return {m:['sideDelts'],s:[]};
   if(any('shoulder press','overhead press','ohp','military press','arnold press')) return {m:['frontDelts'],s:['sideDelts','triceps']};
   if(any('shrug')) return {m:['upperBack'],s:[]};
+  if(any('plank','dead bug','bird dog','pallof','crunch','sit-up','sit up','ab wheel','leg raise','knee raise','hollow','russian twist','woodchop','oblique')) return {m:['core'],s:[]};
   if(any('calf','calve')) return {m:['calves'],s:[]};
   if(any('leg curl','ham curl','hamstring curl','nordic')) return {m:['hams'],s:[]};
   if(any('leg extension','quad extension','knee extension')) return {m:['quads'],s:[]};
@@ -1580,7 +1604,7 @@ function goToExercise(nm){
 }
 
 /* colour each workout type distinctly on the day map */
-const DAY_COLORS={push:'#E8A44C', pull:'#5EA9DB', legs:'#5FBE8C', taper:'#B57FD6'};
+const DAY_COLORS={push:'#E8A44C', pull:'#5EA9DB', legs:'#5FBE8C', taper:'#B57FD6', core:'#E8926A'};
 const DAY_FALLBACK=['#F5B78C','#B7A8F0','#7FD8C8','#F09CC0','#C7D66E'];
 function dayColor(id){
   if(DAY_COLORS[id]) return DAY_COLORS[id];
