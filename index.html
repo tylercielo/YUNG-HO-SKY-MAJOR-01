@@ -119,6 +119,14 @@
   .ex .nm{font-size:15.5px;font-weight:700;}
   .ex .pres{font-family:'Jost',monospace;font-size:12px;color:var(--steel);white-space:nowrap;}
   .ex .cue{color:var(--dim);font-size:12.5px;margin-top:4px;}
+  /* collapsible exercise cards */
+  .exhead{display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0;}
+  .exhead-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .exhead .doneb{font-size:11px;font-weight:700;color:#fff;background:var(--flare);border-radius:999px;padding:2px 9px;flex-shrink:0;white-space:nowrap;}
+  .exhead .chev{color:var(--dim);flex-shrink:0;font-size:12px;transition:transform .2s;}
+  .ex.open .exhead .chev{transform:rotate(180deg);}
+  .exbody{display:none;}
+  .ex.open .exbody{display:block;}
 
   /* signature: the beat-it readout */
   .beat{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:11px;
@@ -353,7 +361,12 @@
   .month{font-family:'Jost',serif;font-size:19px;color:var(--steel);margin:22px 0 6px;
     padding-bottom:6px;border-bottom:1px solid var(--edge);}
   .sess{background:var(--grad-tile);border:1px solid rgba(60,100,150,.5);border-radius:14px;padding:13px 14px;margin-top:9px;overflow:hidden;box-shadow:var(--shadow-tile), var(--hi);}
-  .sess .sh{display:flex;align-items:baseline;gap:8px;}
+  .sess .sh{display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .sess .scount{font-family:'Jost',monospace;font-size:10.5px;color:#fff;background:var(--dim);border-radius:999px;padding:1px 7px;}
+  .sess .chev{color:var(--dim);font-size:11px;transition:transform .2s;}
+  .sess.open .chev{transform:rotate(180deg);}
+  .sessbody{display:none;}
+  .sess.open .sessbody{display:block;}
   .sess .sd{font-weight:700;font-size:14.5px;overflow-wrap:anywhere;}
   .sess .sday{font-family:'Jost',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
     color:#fff;background:var(--flare);border-radius:5px;padding:2px 6px;}
@@ -565,7 +578,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 14 · goblet squat</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 15 · collapsible + triceps + fixes</div>
   </div>
 </div>
 
@@ -605,6 +618,18 @@ function patchExerciseOptions(){
   (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
     if(e && (e.nm||'').trim().toLowerCase()==='leg press' && e.v) delete e.v;
   }));
+  // add the extra tricep work to Push, after the overhead extension
+  const push=(S.workouts||[]).find(d=>d.id==='push');
+  if(push && Array.isArray(push.ex)){
+    const pl=nm=>push.ex.some(e=>(e.nm||'').trim().toLowerCase()===nm);
+    const tadd=[];
+    if(!pl('close-grip bench press')) tadd.push({id:'p7',nm:'Close-grip bench press',pr:'3 × 6–10',cue:'Tricep-first compound. Hands ~shoulder-width, elbows tucked close to your ribs, drive with the triceps. Lets you overload all three heads with real weight.'});
+    if(!pl('tricep pushdown')) tadd.push({id:'p8',nm:'Tricep pushdown',pr:'3 × 10–15',cue:'Lateral head — the horseshoe. Elbows pinned to your sides, full lockout, control the way up. Rope for the squeeze, straight bar for heavier loading.'});
+    if(tadd.length){
+      const oIdx=push.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='overhead triceps extension');
+      push.ex.splice(oIdx>=0?oIdx+1:push.ex.length,0,...tadd);
+    }
+  }
   // give the presses an incline/flat toggle (rename to angle-neutral in existing data)
   const PRESS={
     'incline dumbbell press':{nm:'Dumbbell press',v:['Incline','Flat']},
@@ -810,7 +835,9 @@ const DEFAULT_W=[
   {id:'p3',nm:'Seated dumbbell shoulder press',pr:'3 × 8–12',cue:'Press without arching. Stop just short of locking out.'},
   {id:'p4',nm:'Cable lateral raise',pr:'4 × 12–20',v:['Lat','Front','Rear'],cue:'Side delts are the width in the taper. Light, slow, high reps, no swing.'},
   {id:'p5',nm:'Cable fly',pr:'3 × 12–15',v:['High','Mid','Low'],cue:'Chase the stretch at the bottom, not the squeeze at the top.'},
-  {id:'p6',nm:'Overhead triceps extension',pr:'3 × 10–15',cue:'Long head grows with the arm overhead.'}]},
+  {id:'p6',nm:'Overhead triceps extension',pr:'3 × 10–15',cue:'Long head — the biggest of the three heads — grows most with the arm overhead in the stretched position. Full stretch at the bottom, elbows tucked.'},
+  {id:'p7',nm:'Close-grip bench press',pr:'3 × 6–10',cue:'Tricep-first compound. Hands ~shoulder-width, elbows tucked close to your ribs, drive with the triceps. Lets you overload all three heads with real weight.'},
+  {id:'p8',nm:'Tricep pushdown',pr:'3 × 10–15',cue:'Lateral head — the horseshoe. Elbows pinned to your sides, full lockout, control the way up. Rope for the squeeze, straight bar for heavier loading.'}]},
  {id:'pull',label:'Pull',ex:[
   {id:'l1',nm:'Wide-grip pull-up or pulldown',pr:'4 × 6–12',cue:'Widest grip you actually control. Drive elbows down toward your hips.'},
   {id:'l12',nm:'Chin-up',pr:'4 × 6–12',cue:'Underhand, shoulder-width. The bicep-heavy vertical pull — lats and biceps together. Full hang at the bottom, drive your chest to the bar.'},
@@ -870,6 +897,8 @@ function initEditToggle(){
   });
 }
 let sel={}; // remembers the picked variation per exercise
+let exOpen={}; // which exercise cards are expanded
+let sessOpen={}; // which log sessions are expanded
 
 function renderDays(){
   const dd=document.getElementById('days');
@@ -993,8 +1022,14 @@ function renderEx(){
     ).join('')}</div>` : '';
     const varRow = e.v ? `<div class="vars" data-id="${e.id}">${e.v.map((o,i)=>
       `<button class="vchip ${i===0?'on':''}" data-id="${e.id}" data-v="${o}">${o}</button>`).join('')}</div>` : '';
-    return `<div class="ex" data-ex="${e.id}">
-      <div class="head"><span class="nm">${e.nm}</span><span class="pres">${e.pr||''}</span></div>
+    const isOpen = !!exOpen[e.id];
+    return `<div class="ex ${isOpen?'open':''}" data-ex="${e.id}">
+      <div class="exhead" data-toggle="${e.id}">
+        <div class="exhead-main"><span class="nm">${e.nm}</span><span class="pres">${e.pr||''}</span></div>
+        ${mine.length?`<span class="doneb">✓ ${mine.length}</span>`:''}
+        <span class="chev">▾</span>
+      </div>
+      <div class="exbody">
       ${e.cue?`<div class="cue">${e.cue}</div>`:''}
       <div class="beat ${prev?'fresh':'empty'}">
         <span class="lab">${prev?'beat this':'no log yet'}</span><span class="val">${val}</span>
@@ -1017,9 +1052,16 @@ function renderEx(){
                <button class="go">Add</button>
              </div>`}
       </div>
+      </div>
     </div>`;
   }).join('') || '<div class="empty">No exercises on this day yet. Tap Edit to add some.</div>';
 
+  el.querySelectorAll('.exhead').forEach(h=>h.addEventListener('click',()=>{
+    const id=h.dataset.toggle;
+    exOpen[id]=!exOpen[id];
+    const card=el.querySelector(`.ex[data-ex="${id}"]`);
+    if(card) card.classList.toggle('open',exOpen[id]);
+  }));
   el.querySelectorAll('.logbtn').forEach(b=>b.addEventListener('click',()=>{
     const box=el.querySelector(`.inputs[data-id="${b.dataset.id}"]`);
     box.classList.toggle('show');
@@ -1421,18 +1463,28 @@ function renderHistory(){
     if(mLabel!==lastMonth){ out+=`<div class="month">${mLabel}</div>`; lastMonth=mLabel; }
     const dLabel=dt.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
     const t=fmtTime(sessionTime(s));
-    out+=`<div class="sess">
-      <div class="sh">
+    const so=!!sessOpen[s.key], nEx=s.entries.length;
+    out+=`<div class="sess ${so?'open':''}">
+      <div class="sh" data-toggle="${s.key}">
         <span class="sd">${dLabel}</span>
         <span class="sday" style="background:${dayColor(s.day)}">${(S.workouts.find(d=>d.id===s.day)||{}).label||s.day}</span>
+        <span class="scount">${nEx}</span>
         <span class="stime">${t}</span>
+        <span class="chev">▾</span>
         <button class="sx" data-k="${s.key}">✕</button>
       </div>
-      ${s.entries.map(e=>`<div class="er"><span class="en">${e.nm}</span><span class="ev">${setStr(e.sets)}</span></div>`).join('')}
+      <div class="sessbody">${s.entries.map(e=>`<div class="er"><span class="en">${e.nm}</span><span class="ev">${setStr(e.sets)}</span></div>`).join('')}</div>
     </div>`;
   });
   el.innerHTML=out;
-  el.querySelectorAll('.sx').forEach(b=>b.addEventListener('click',()=>{
+  el.querySelectorAll('.sh').forEach(h=>h.addEventListener('click',()=>{
+    const k=h.dataset.toggle;
+    sessOpen[k]=!sessOpen[k];
+    const card=h.closest('.sess');
+    if(card) card.classList.toggle('open',sessOpen[k]);
+  }));
+  el.querySelectorAll('.sx').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
     S.sessions=S.sessions.filter(x=>x.key!==b.dataset.k); save(); renderHistory();
   }));
 }
@@ -1453,6 +1505,9 @@ const EX_MUSCLES={
   'cable lateral raise':{m:['sideDelts'],s:[]},
   'cable fly':{m:['chest'],s:[]},
   'overhead triceps extension':{m:['triceps'],s:[]},
+  'close-grip bench press':{m:['triceps'],s:['chest','frontDelts']}, 'close grip bench press':{m:['triceps'],s:['chest','frontDelts']}, 'close-grip bench':{m:['triceps'],s:['chest','frontDelts']}, 'close grip bench':{m:['triceps'],s:['chest','frontDelts']}, 'jm press':{m:['triceps'],s:['chest']},
+  'tricep pushdown':{m:['triceps'],s:[]}, 'triceps pushdown':{m:['triceps'],s:[]}, 'pushdown':{m:['triceps'],s:[]}, 'rope pushdown':{m:['triceps'],s:[]}, 'cable pushdown':{m:['triceps'],s:[]}, 'skull crusher':{m:['triceps'],s:[]}, 'skullcrusher':{m:['triceps'],s:[]}, 'tricep dip':{m:['triceps'],s:['chest']}, 'triceps dip':{m:['triceps'],s:['chest']},
+  'reverse curl':{m:['forearms'],s:['biceps']}, 'reverse bar curl':{m:['forearms'],s:['biceps']}, 'reverse barbell curl':{m:['forearms'],s:['biceps']}, 'reverse grip curl':{m:['forearms'],s:['biceps']}, 'pronated curl':{m:['forearms'],s:['biceps']}, 'pronated bar curl':{m:['forearms'],s:['biceps']}, 'reverse ez bar curl':{m:['forearms'],s:['biceps']},
   'wide-grip pull-up or pulldown':{m:['lats'],s:['biceps','upperBack']},
   'chest-supported row':{m:['upperBack'],s:['lats','biceps','rearDelts']},
   'seated cable row':{m:['upperBack'],s:['lats','biceps','rearDelts']}, 'cable row':{m:['upperBack'],s:['lats','biceps']}, 'seated row':{m:['upperBack'],s:['lats','biceps']},
@@ -1509,6 +1564,7 @@ function inferMuscles(nm){
   if(any('rdl','romanian','deadlift','good morning','pull-through','pull through')) return {m:['hams'],s:['glutes']};
   if(any('squat','leg press','lunge','hack','step up','step-up','sissy')) return {m:['quads'],s:['glutes']};
   if(any('wrist','forearm','farmer')) return {m:['forearms'],s:[]};
+  if(both('reverse','curl')||both('pronated','curl')||any('reverse bar curl','reverse grip curl')) return {m:['forearms'],s:['biceps']};
   if(any('hammer curl')) return {m:['biceps'],s:['forearms']};
   if(s.includes('curl')) return {m:['biceps'],s:[]};
   if(any('tricep','pushdown','skull','dip')||both('overhead','extension')) return {m:['triceps'],s:[]};
@@ -1517,6 +1573,8 @@ function inferMuscles(nm){
   if(any('reverse pec','pec deck','chest press','bench','fly','flye')||both('incline','press')||s.includes('chest')) return {m:['chest'],s:['frontDelts','triceps']};
   return null;
 }
+// a variation that changes WHICH muscle a set trains (delt direction) → routes the set to that head
+const VAR_MUSCLE={ front:{m:['frontDelts'],s:[]}, rear:{m:['rearDelts'],s:[]}, lat:{m:['sideDelts'],s:[]}, side:{m:['sideDelts'],s:[]} };
 function muscleVolume(days){
   days=days||7;
   const t=new Date(), cutoff=new Date(t.getFullYear(),t.getMonth(),t.getDate()-(days-1));
@@ -1527,12 +1585,16 @@ function muscleVolume(days){
     if(new Date(y,m-1,d)<cutoff) return;
     (s.entries||[]).forEach(e=>{
       const sets=e.sets||[]; if(!sets.length) return;
-      const tag=EX_MUSCLES[(e.nm||'').trim().toLowerCase()] || inferMuscles(e.nm);
-      if(!tag){ untagged+=sets.length; return; }
-      // a single-side (Left/Right) set works one limb → counts as half a muscle set
-      let w=0; sets.forEach(st=>{ w += (st.t==='Left'||st.t==='Right') ? 0.5 : 1; });
-      (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=w; });
-      (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=w*0.5; });
+      const base=EX_MUSCLES[(e.nm||'').trim().toLowerCase()] || inferMuscles(e.nm);
+      if(!base){ untagged+=sets.length; return; }
+      sets.forEach(st=>{
+        // a delt-direction variation (Front/Rear/Lat) routes the set to that head; otherwise the exercise's own muscles
+        const tag = VAR_MUSCLE[(st.t||'').toLowerCase()] || base;
+        // a single-side (Left/Right) set works one limb → counts as half a muscle set
+        const wt = (st.t==='Left'||st.t==='Right') ? 0.5 : 1;
+        (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=wt; });
+        (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=wt*0.5; });
+      });
     });
   });
   return {totals,untagged};
