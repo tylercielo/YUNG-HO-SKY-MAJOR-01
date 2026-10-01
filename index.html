@@ -320,6 +320,23 @@
   .gaps .gdone{font-size:13px;color:var(--volt);}
   .gx .glink{color:var(--flare);cursor:pointer;text-decoration:none;border-bottom:1px solid rgba(210,128,154,.45);}
   .gx .glink:active{opacity:.55;}
+  /* strength · month over month */
+  .strow{border:1px solid var(--edge);border-radius:12px;margin-top:8px;overflow:hidden;background:var(--grad-tile);box-shadow:var(--shadow-tile);}
+  .strow .sthead{display:flex;align-items:center;gap:9px;padding:12px 14px;cursor:pointer;}
+  .strow .stnm{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--paper);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .strow .ste1{font-family:'Jost',monospace;font-size:12.5px;color:var(--paper);white-space:nowrap;}
+  .strow .ste1 em{font-style:normal;color:var(--dim);font-size:10px;}
+  .strow .stbadge{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap;color:#fff;}
+  .stbadge.up{background:var(--flare);}
+  .stbadge.hold{background:var(--dim);}
+  .stbadge.down{background:#C98A5A;}
+  .stbadge.thin{background:none;color:var(--dim);border:1px solid var(--edge);}
+  .strow .chev{color:var(--dim);font-size:11px;transition:transform .2s;flex-shrink:0;}
+  .strow.open .chev{transform:rotate(180deg);}
+  .stbody{display:none;padding:0 14px 14px;}
+  .strow.open .stbody{display:block;}
+  .stmonths{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:10px;font-family:'Jost',monospace;font-size:11px;color:var(--steel);}
+  .stmonths b{color:var(--paper);}
   @keyframes exFlash{0%{background:rgba(210,128,154,.18);}100%{background:transparent;}}
   .ex.flash{animation:exFlash 1.5s ease;border-radius:12px;}
   @media (prefers-reduced-motion:reduce){.ex.flash{animation:none;}}
@@ -556,6 +573,12 @@
         <div id="muscleGaps"></div>
       </div>
 
+      <div class="goalsec">
+        <div class="qhead"><span class="eyebrow">Strength · month over month</span></div>
+        <div class="sub" style="margin:2px 0 4px;font-size:12.5px;">Your best estimated 1-rep max each month, per lift — a bad day can't drag it down. Up is progress; holding a hard-won max still counts. Tap a lift to see its line.</div>
+        <div id="strengthList"></div>
+      </div>
+
       <div id="history"></div>
     </div>
 
@@ -578,7 +601,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 15 · collapsible + triceps + fixes</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 18 · chest regions</div>
   </div>
 </div>
 
@@ -617,6 +640,13 @@ async function load(){
 function patchExerciseOptions(){
   (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
     if(e && (e.nm||'').trim().toLowerCase()==='leg press' && e.v) delete e.v;
+  }));
+  // relabel the Cable fly region toggle to Upper/Mid/Lower (clearer which angle builds the top)
+  (S.workouts||[]).forEach(d=>(d.ex||[]).forEach(e=>{
+    if(e && (e.nm||'').trim().toLowerCase()==='cable fly'){
+      e.v=['Upper','Mid','Lower'];
+      e.cue='Pick the region. Upper = low pulleys, fly up (clavicular — the low-to-high that lit you up). Mid = flat. Lower = high pulleys, fly down. Chase the stretch at the bottom.';
+    }
   }));
   // add the extra tricep work to Push, after the overhead extension
   const push=(S.workouts||[]).find(d=>d.id==='push');
@@ -834,7 +864,7 @@ const DEFAULT_W=[
   {id:'p2',nm:'Barbell bench',pr:'3 × 6–10',v:['Flat','Incline'],cue:'Toggle flat or incline. Elbows about 45° from your ribs, bar to lower chest on flat, upper chest on incline. Controlled, full range.'},
   {id:'p3',nm:'Seated dumbbell shoulder press',pr:'3 × 8–12',cue:'Press without arching. Stop just short of locking out.'},
   {id:'p4',nm:'Cable lateral raise',pr:'4 × 12–20',v:['Lat','Front','Rear'],cue:'Side delts are the width in the taper. Light, slow, high reps, no swing.'},
-  {id:'p5',nm:'Cable fly',pr:'3 × 12–15',v:['High','Mid','Low'],cue:'Chase the stretch at the bottom, not the squeeze at the top.'},
+  {id:'p5',nm:'Cable fly',pr:'3 × 12–15',v:['Upper','Mid','Lower'],cue:'Pick the region. Upper = low pulleys, fly up (clavicular — the low-to-high that lit you up). Mid = flat. Lower = high pulleys, fly down. Chase the stretch at the bottom.'},
   {id:'p6',nm:'Overhead triceps extension',pr:'3 × 10–15',cue:'Long head — the biggest of the three heads — grows most with the arm overhead in the stretched position. Full stretch at the bottom, elbows tucked.'},
   {id:'p7',nm:'Close-grip bench press',pr:'3 × 6–10',cue:'Tricep-first compound. Hands ~shoulder-width, elbows tucked close to your ribs, drive with the triceps. Lets you overload all three heads with real weight.'},
   {id:'p8',nm:'Tricep pushdown',pr:'3 × 10–15',cue:'Lateral head — the horseshoe. Elbows pinned to your sides, full lockout, control the way up. Rope for the squeeze, straight bar for heavier loading.'}]},
@@ -1441,6 +1471,7 @@ function renderHistory(){
   const el=document.getElementById('history');
   renderWorkoutDays();
   renderMuscles();
+  renderStrength();
   const list=[...S.sessions].sort((a,b)=> b.date.localeCompare(a.date) || (b.entries[0]?.at||'').localeCompare(a.entries[0]?.at||''));
   const now=new Date(), ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('hTotal').textContent=list.length;
@@ -1491,7 +1522,7 @@ function renderHistory(){
 
 /* ===== muscle volume: which muscles you've trained this week ===== */
 const MUSCLES={
-  chest:'Chest', frontDelts:'Front delts', sideDelts:'Side delts', rearDelts:'Rear delts',
+  chestUpper:'Upper chest', chestMid:'Mid chest', chestLower:'Lower chest', frontDelts:'Front delts', sideDelts:'Side delts', rearDelts:'Rear delts',
   lats:'Lats', upperBack:'Upper back', biceps:'Biceps', triceps:'Triceps', forearms:'Forearms',
   quads:'Quads', hams:'Hamstrings', glutes:'Glutes', calves:'Calves', core:'Core'
 };
@@ -1508,10 +1539,10 @@ const EX_MUSCLES={
   'close-grip bench press':{m:['triceps'],s:['chest','frontDelts']}, 'close grip bench press':{m:['triceps'],s:['chest','frontDelts']}, 'close-grip bench':{m:['triceps'],s:['chest','frontDelts']}, 'close grip bench':{m:['triceps'],s:['chest','frontDelts']}, 'jm press':{m:['triceps'],s:['chest']},
   'tricep pushdown':{m:['triceps'],s:[]}, 'triceps pushdown':{m:['triceps'],s:[]}, 'pushdown':{m:['triceps'],s:[]}, 'rope pushdown':{m:['triceps'],s:[]}, 'cable pushdown':{m:['triceps'],s:[]}, 'skull crusher':{m:['triceps'],s:[]}, 'skullcrusher':{m:['triceps'],s:[]}, 'tricep dip':{m:['triceps'],s:['chest']}, 'triceps dip':{m:['triceps'],s:['chest']},
   'reverse curl':{m:['forearms'],s:['biceps']}, 'reverse bar curl':{m:['forearms'],s:['biceps']}, 'reverse barbell curl':{m:['forearms'],s:['biceps']}, 'reverse grip curl':{m:['forearms'],s:['biceps']}, 'pronated curl':{m:['forearms'],s:['biceps']}, 'pronated bar curl':{m:['forearms'],s:['biceps']}, 'reverse ez bar curl':{m:['forearms'],s:['biceps']},
-  'wide-grip pull-up or pulldown':{m:['lats'],s:['biceps','upperBack']},
+  'wide-grip pull-up or pulldown':{m:['lats'],s:['biceps','upperBack','forearms']},
   'chest-supported row':{m:['upperBack'],s:['lats','biceps','rearDelts']},
   'seated cable row':{m:['upperBack'],s:['lats','biceps','rearDelts']}, 'cable row':{m:['upperBack'],s:['lats','biceps']}, 'seated row':{m:['upperBack'],s:['lats','biceps']},
-  'single-arm dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'single arm dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'one-arm dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'dumbbell row':{m:['upperBack'],s:['lats','biceps']}, 'db row':{m:['upperBack'],s:['lats','biceps']}, 'one arm row':{m:['upperBack'],s:['lats','biceps']},
+  'single-arm dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'single arm dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'one-arm dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'db row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'one arm row':{m:['upperBack'],s:['lats','biceps','forearms']},
   't-bar / lever row':{m:['upperBack'],s:['lats','biceps']}, 't-bar row':{m:['upperBack'],s:['lats','biceps']}, 'tbar row':{m:['upperBack'],s:['lats','biceps']}, 'lever row':{m:['upperBack'],s:['lats','biceps']}, 'machine row':{m:['upperBack'],s:['lats','biceps']}, 'hammer row':{m:['upperBack'],s:['lats','biceps']},
   'incline db curl':{m:['biceps'],s:[]},
   'bayesian curl':{m:['biceps'],s:[]},
@@ -1523,7 +1554,7 @@ const EX_MUSCLES={
   'wrist curl + reverse curl':{m:['forearms'],s:[]},
   'dead hang':{m:['forearms'],s:['upperBack']},
   'back squat or hack squat':{m:['quads'],s:['glutes','hams']},
-  'romanian deadlift':{m:['hams'],s:['glutes']},
+  'romanian deadlift':{m:['hams'],s:['glutes','forearms']},
   'standing cable rdl / pull-through':{m:['hams'],s:['glutes']},
   'cable pull-through':{m:['glutes'],s:['hams']}, 'cable pull through':{m:['glutes'],s:['hams']}, 'pull-through':{m:['glutes'],s:['hams']}, 'pull through':{m:['glutes'],s:['hams']}, 'cable pullthrough':{m:['glutes'],s:['hams']},
   'leg press':{m:['quads'],s:['glutes']},
@@ -1538,7 +1569,7 @@ const EX_MUSCLES={
   'bulgarian split squat':{m:['quads'],s:['glutes','hams']},
   'goblet squat':{m:['quads'],s:['glutes']},
   'dead bug':{m:['core'],s:[]}, 'bird dog':{m:['core'],s:[]}, 'front plank':{m:['core'],s:[]}, 'plank':{m:['core'],s:[]}, 'side plank':{m:['core'],s:[]}, 'pallof press':{m:['core'],s:[]}, 'pallof':{m:['core'],s:[]}, 'cable crunch':{m:['core'],s:[]}, 'crunch':{m:['core'],s:[]}, 'hanging leg raise':{m:['core'],s:[]}, 'hanging knee raise':{m:['core'],s:[]}, 'leg raise':{m:['core'],s:[]}, 'ab wheel':{m:['core'],s:[]}, 'hollow hold':{m:['core'],s:[]}, 'russian twist':{m:['core'],s:[]}, 'cable woodchop':{m:['core'],s:[]}, 'woodchop':{m:['core'],s:[]},
-  'chin-up':{m:['lats'],s:['biceps']}, 'chin-ups':{m:['lats'],s:['biceps']}, 'chinup':{m:['lats'],s:['biceps']}, 'chin up':{m:['lats'],s:['biceps']}, 'underhand pull-up':{m:['lats'],s:['biceps']},
+  'chin-up':{m:['lats'],s:['biceps','forearms']}, 'chin-ups':{m:['lats'],s:['biceps','forearms']}, 'chinup':{m:['lats'],s:['biceps','forearms']}, 'chin up':{m:['lats'],s:['biceps','forearms']}, 'underhand pull-up':{m:['lats'],s:['biceps','forearms']},
   'hip abduction':{m:['glutes'],s:[]}, 'abductor':{m:['glutes'],s:[]}, 'abductor machine':{m:['glutes'],s:[]}, 'hip abduction machine':{m:['glutes'],s:[]}, 'seated hip abduction':{m:['glutes'],s:[]}, 'hip abductor':{m:['glutes'],s:[]},
   'glute kickback':{m:['glutes'],s:[]}, 'cable kickback':{m:['glutes'],s:[]}, 'kickback':{m:['glutes'],s:[]}, 'cable glute kickback':{m:['glutes'],s:[]},
   'hip thrust':{m:['glutes'],s:['hams']}, 'barbell hip thrust':{m:['glutes'],s:['hams']}, 'glute bridge':{m:['glutes'],s:['hams']},
@@ -1561,7 +1592,8 @@ function inferMuscles(nm){
   if(any('leg curl','ham curl','hamstring curl','nordic')) return {m:['hams'],s:[]};
   if(any('leg extension','quad extension','knee extension')) return {m:['quads'],s:[]};
   if(any('hip thrust','glute bridge','kickback','abduction','abductor','frog pump','glute')) return {m:['glutes'],s:[]};
-  if(any('rdl','romanian','deadlift','good morning','pull-through','pull through')) return {m:['hams'],s:['glutes']};
+  if(any('pull-through','pull through','pullthrough')) return {m:['hams'],s:['glutes']};
+  if(any('rdl','romanian','deadlift','good morning','stiff-leg','stiff leg')) return {m:['hams'],s:['glutes','forearms']};
   if(any('squat','leg press','lunge','hack','step up','step-up','sissy')) return {m:['quads'],s:['glutes']};
   if(any('wrist','forearm','farmer')) return {m:['forearms'],s:[]};
   if(both('reverse','curl')||both('pronated','curl')||any('reverse bar curl','reverse grip curl')) return {m:['forearms'],s:['biceps']};
@@ -1569,12 +1601,15 @@ function inferMuscles(nm){
   if(s.includes('curl')) return {m:['biceps'],s:[]};
   if(any('tricep','pushdown','skull','dip')||both('overhead','extension')) return {m:['triceps'],s:[]};
   if(/\brows?\b/.test(s)) return {m:['upperBack'],s:['lats','biceps']};
-  if(any('pulldown','pull-up','pullup','pull up','chin','pullover','lat prayer')) return {m:['lats'],s:['biceps','upperBack']};
+  if(any('pulldown','pull-up','pullup','pull up','pullover','lat prayer')||/\bchin/.test(s)) return {m:['lats'],s:['biceps','upperBack']};
   if(any('reverse pec','pec deck','chest press','bench','fly','flye')||both('incline','press')||s.includes('chest')) return {m:['chest'],s:['frontDelts','triceps']};
   return null;
 }
 // a variation that changes WHICH muscle a set trains (delt direction) → routes the set to that head
 const VAR_MUSCLE={ front:{m:['frontDelts'],s:[]}, rear:{m:['rearDelts'],s:[]}, lat:{m:['sideDelts'],s:[]}, side:{m:['sideDelts'],s:[]} };
+// an angle variation on a CHEST lift routes that set to a chest region (default mid when no angle picked).
+// covers press angles (incline/flat/decline) and fly labels old (low=up/high=down) + new (upper/mid/lower).
+const CHEST_REGION={ incline:'chestUpper', upper:'chestUpper', low:'chestUpper', flat:'chestMid', mid:'chestMid', decline:'chestLower', lower:'chestLower', high:'chestLower' };
 function muscleVolume(days){
   days=days||7;
   const t=new Date(), cutoff=new Date(t.getFullYear(),t.getMonth(),t.getDate()-(days-1));
@@ -1588,12 +1623,15 @@ function muscleVolume(days){
       const base=EX_MUSCLES[(e.nm||'').trim().toLowerCase()] || inferMuscles(e.nm);
       if(!base){ untagged+=sets.length; return; }
       sets.forEach(st=>{
+        const vlabel=(st.t||'').toLowerCase();
         // a delt-direction variation (Front/Rear/Lat) routes the set to that head; otherwise the exercise's own muscles
-        const tag = VAR_MUSCLE[(st.t||'').toLowerCase()] || base;
+        const tag = VAR_MUSCLE[vlabel] || base;
+        const chestReg = CHEST_REGION[vlabel] || 'chestMid';   // chest credit lands here (angle → region, else mid)
         // a single-side (Left/Right) set works one limb → counts as half a muscle set
         const wt = (st.t==='Left'||st.t==='Right') ? 0.5 : 1;
-        (tag.m||[]).forEach(k=>{ if(k in totals) totals[k]+=wt; });
-        (tag.s||[]).forEach(k=>{ if(k in totals) totals[k]+=wt*0.5; });
+        const add=(k,amt)=>{ const key = (k==='chest') ? chestReg : k; if(key in totals) totals[key]+=amt; };
+        (tag.m||[]).forEach(k=>add(k,wt));
+        (tag.s||[]).forEach(k=>add(k,wt*0.5));
       });
     });
   });
@@ -1630,7 +1668,7 @@ function renderGaps(totals){
     const nm=(e.nm||'').trim(), key=nm.toLowerCase();
     if(!nm || seen.has(key)) return; seen.add(key);
     const tag=EX_MUSCLES[key] || inferMuscles(nm); if(!tag) return;
-    (tag.m||[]).forEach(mk=>{ (byMuscle[mk]=byMuscle[mk]||[]).push(nm); });
+    (tag.m||[]).forEach(mk=>{ (mk==='chest'?['chestUpper','chestMid','chestLower']:[mk]).forEach(k=>{ (byMuscle[k]=byMuscle[k]||[]).push(nm); }); });
   }));
   if(!low.length){ box.innerHTML=`<div class="gaps"><div class="gdone">Everything's covered this week — no gaps to chase. Hold your split.</div></div>`; return; }
   const rows=low.map((m,i)=>{
@@ -1675,6 +1713,79 @@ function dayColor(id){
   let h=0; for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))>>>0;
   return DAY_FALLBACK[h%DAY_FALLBACK.length];
 }
+/* ===== strength: estimated 1RM, best per month, per lift ===== */
+function epley(w,r){ return w*(1+r/30); } // estimated 1-rep max from a working set
+function strengthData(){
+  const map={}; // exercise name -> { 'YYYY-MM': best est1RM that month }
+  (S.sessions||[]).forEach(s=>{
+    const ym=(s.date||'').slice(0,7); if(!ym) return;
+    (s.entries||[]).forEach(e=>{
+      const nm=(e.nm||'').trim(); if(!nm) return;
+      (e.sets||[]).forEach(st=>{
+        if(st.u==='s') return;                                   // timed hold — no 1RM
+        if(st.w==='BW' || !(+st.w>0) || !(+st.r>0)) return;      // bodyweight / incomplete — skip
+        const est=epley(+st.w,+st.r);
+        map[nm]=map[nm]||{};
+        map[nm][ym]=Math.max(map[nm][ym]||0, est);
+      });
+    });
+  });
+  return map;
+}
+const monthLabel=ym=>{ const[y,m]=ym.split('-').map(Number); return new Date(y,m-1,1).toLocaleDateString(undefined,{month:'short'}); };
+function strengthChart(pts){
+  if(pts.length<2) return '<div class="sub" style="font-size:12px;margin-top:8px;">One month logged so far — the line appears once you\'ve got a second month.</div>';
+  const W=300,H=88,pl=6,pr=6,pt=10,pb=8;
+  const ys=pts.map(p=>p.v), minY=Math.min(...ys), maxY=Math.max(...ys), span=(maxY-minY)||1;
+  const px=i=>pl+(i/(pts.length-1))*(W-pl-pr);
+  const py=v=>pt+(1-(v-minY)/span)*(H-pt-pb);
+  let g=`<path d="${pts.map((p,i)=>(i?'L':'M')+px(i).toFixed(1)+' '+py(p.v).toFixed(1)).join(' ')}" fill="none" stroke="#D2809A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  pts.forEach((p,i)=>{ g+=`<circle cx="${px(i).toFixed(1)}" cy="${py(p.v).toFixed(1)}" r="3" fill="#D2809A"/>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" style="margin-top:10px" role="img" aria-label="strength trend">${g}</svg>`;
+}
+let stOpen={};
+function renderStrength(){
+  const el=document.getElementById('strengthList'); if(!el) return;
+  const data=strengthData();
+  const names=Object.keys(data);
+  if(!names.length){ el.innerHTML='<div class="empty">Log a few weighted sets and your strength lines start showing up here.</div>'; return; }
+  const rows=names.map(nm=>{
+    const pts=Object.keys(data[nm]).sort().map(m=>({m,v:data[nm][m]}));
+    const latest=pts[pts.length-1];
+    let badge,cls;
+    if(pts.length<2){ badge='new'; cls='thin'; }
+    else{
+      const d=latest.v-pts[pts.length-2].v;
+      if(d>=2.5){ badge='+'+Math.round(d)+' lb'; cls='up'; }
+      else if(d<=-2.5){ badge=Math.round(d)+' lb'; cls='down'; }
+      else{ badge='holding'; cls='hold'; }
+    }
+    return {nm,pts,latest,badge,cls};
+  }).sort((a,b)=> b.latest.m.localeCompare(a.latest.m) || b.pts.length-a.pts.length);
+  el.innerHTML=rows.map(r=>{
+    const open=!!stOpen[r.nm];
+    const months=r.pts.map(p=>`<span>${monthLabel(p.m)} <b>${Math.round(p.v)}</b></span>`).join('');
+    return `<div class="strow ${open?'open':''}" data-nm="${r.nm.replace(/"/g,'&quot;')}">
+      <div class="sthead">
+        <span class="stnm">${r.nm}</span>
+        <span class="ste1">${Math.round(r.latest.v)} <em>est</em></span>
+        <span class="stbadge ${r.cls}">${r.badge}</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="stbody">
+        ${strengthChart(r.pts)}
+        <div class="stmonths">${months}</div>
+        <div class="sub" style="font-size:11.5px;margin-top:9px;">Best estimated 1-rep max each month — an estimate from your top set, not a tested max. What matters is the direction over time.</div>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.sthead').forEach(h=>h.addEventListener('click',()=>{
+    const row=h.closest('.strow'), nm=row.dataset.nm;
+    stOpen[nm]=!stOpen[nm];
+    row.classList.toggle('open',stOpen[nm]);
+  }));
+}
+
 function renderWorkoutDays(){
   const grid=document.getElementById('wdGrid'); if(!grid) return;
   const todayStr=tk();
