@@ -125,6 +125,12 @@
   .exhead .doneb{font-size:11px;font-weight:700;color:#fff;background:var(--flare);border-radius:999px;padding:2px 9px;flex-shrink:0;white-space:nowrap;}
   .exhead .chev{color:var(--dim);flex-shrink:0;font-size:12px;transition:transform .2s;}
   .ex.open .exhead .chev{transform:rotate(180deg);}
+  .exmus{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:2px 0 9px;}
+  .exmus .mlbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:0 1px 0 4px;}
+  .exmus .mlbl:first-child{margin-left:0;}
+  .exmus .mt{font-size:10.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;}
+  .exmus .mt.prim{background:var(--flare);color:#fff;}
+  .exmus .mt.sec{background:none;border:1px solid var(--edge);color:var(--steel);}
   .exbody{display:none;}
   .ex.open .exbody{display:block;}
 
@@ -601,7 +607,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 18 · chest regions</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 19 · muscle tags on train</div>
   </div>
 </div>
 
@@ -990,6 +996,24 @@ function toggleHangTimer(btn){
   hangIv=setInterval(()=>{ const s=Math.floor((Date.now()-t0)/1000); rEl.value=s; btn.textContent='■ Stop · '+fmtDur(s); },250);
 }
 
+// what muscles an exercise trains, reflecting the currently-picked variation (angle / head / region)
+function exMuscles(e){
+  const base=EX_MUSCLES[(e.nm||'').trim().toLowerCase()] || inferMuscles(e.nm);
+  if(!base) return null;
+  const vl = e.v ? (sel[e.id]||e.v[0]||'').toLowerCase() : '';
+  const delt = VAR_MUSCLE[vl];
+  if(delt) return {prim:(delt.m||[]).slice(), sec:(delt.s||[]).slice()};
+  const toReg = k => k==='chest' ? (CHEST_REGION[vl]||'chestMid') : k;
+  return {prim:(base.m||[]).map(toReg), sec:(base.s||[]).map(toReg)};
+}
+function musLabel(k){ return k==='chest' ? 'Chest' : (MUSCLES[k]||k); }
+function musInnerHTML(e){
+  const r=exMuscles(e); if(!r||(!r.prim.length&&!r.sec.length)) return '';
+  let out='';
+  if(r.prim.length) out+='<span class="mlbl">primary</span>'+r.prim.map(k=>`<span class="mt prim">${musLabel(k)}</span>`).join('');
+  if(r.sec.length)  out+='<span class="mlbl">also</span>'+r.sec.map(k=>`<span class="mt sec">${musLabel(k)}</span>`).join('');
+  return out;
+}
 function renderEx(){
   stopHangTimer();
   const el=document.getElementById('exs');
@@ -1060,6 +1084,7 @@ function renderEx(){
         <span class="chev">▾</span>
       </div>
       <div class="exbody">
+      <div class="exmus" data-mus="${e.id}">${musInnerHTML(e)}</div>
       ${e.cue?`<div class="cue">${e.cue}</div>`:''}
       <div class="beat ${prev?'fresh':'empty'}">
         <span class="lab">${prev?'beat this':'no log yet'}</span><span class="val">${val}</span>
@@ -1098,8 +1123,11 @@ function renderEx(){
     if(box.classList.contains('show')) box.querySelector('.w').focus();
   }));
   el.querySelectorAll('.vchip').forEach(c=>c.addEventListener('click',()=>{
-    sel[c.dataset.id]=c.dataset.v;
-    el.querySelectorAll(`.vchip[data-id="${c.dataset.id}"]`).forEach(x=>x.classList.toggle('on',x===c));
+    const id=c.dataset.id;
+    sel[id]=c.dataset.v;
+    el.querySelectorAll(`.vchip[data-id="${id}"]`).forEach(x=>x.classList.toggle('on',x===c));
+    const md=el.querySelector(`.exmus[data-mus="${id}"]`), ex=dayObj().ex.find(x=>x.id===id);
+    if(md&&ex) md.innerHTML=musInnerHTML(ex);   // keep the muscle line in sync with the picked variation
   }));
   el.querySelectorAll('.inputs .go').forEach(g=>g.addEventListener('click',()=>addSet(g.closest('.inputs'))));
   el.querySelectorAll('.tmr').forEach(btn=>btn.addEventListener('click',()=>toggleHangTimer(btn)));
