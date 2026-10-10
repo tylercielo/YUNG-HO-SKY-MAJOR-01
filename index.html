@@ -607,7 +607,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 19 · muscle tags on train</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 20 · half-kneeling cable row</div>
   </div>
 </div>
 
@@ -716,6 +716,7 @@ function patchExerciseOptions(){
     const radd2=[];
     if(!pl('seated cable row')) radd2.push({id:'l13',nm:'Seated Cable Row',pr:'3 × 8–12',cue:'Upper-back builder. Retract the shoulder blades and squeeze them together at the end of each rep — don\'t just yank with your arms. Lead from the shoulder blades, control the return. Chest tall, minimal lower-back involvement.'});
     if(!pl('single-arm dumbbell row')) radd2.push({id:'l14',nm:'Single-Arm Dumbbell Row',pr:'3 × 8–12 ea',cue:'Upper back + lats. Brace on a bench, row the dumbbell to your hip, squeeze the shoulder blade back at the top. Control the lowering.'});
+    if(!pl('half-kneeling cable row')) radd2.push({id:'l16',nm:'Half-kneeling cable row',pr:'3 × 10–12 ea',v:['Left','Right'],cue:'One knee down, low pulley, one arm at a time. Pull the handle to your hip and drive the shoulder blade back — don\'t just bend the elbow. The half-kneeling stance makes your core fight rotation, so stay square. Toggle Left/Right; each side counts as half a set.'});
     if(!pl('t-bar / lever row')) radd2.push({id:'l15',nm:'T-Bar / Lever Row',pr:'3 × 8–12',cue:'Upper-back thickness, machine-supported. Drive elbows back, squeeze shoulder blades together, chest stays on the pad.'});
     if(radd2.length){
       const rowIdx2=pull.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='chest-supported row');
@@ -880,6 +881,7 @@ const DEFAULT_W=[
   {id:'l2',nm:'Chest-supported row',pr:'3 × 8–12',cue:'Thickness. Chest stays on the pad — no cheating with your hips.'},
   {id:'l13',nm:'Seated Cable Row',pr:'3 × 8–12',cue:'Upper-back builder. Retract the shoulder blades and squeeze them together at the end of each rep — don\'t just yank with your arms. Lead from the shoulder blades, control the return. Chest tall, minimal lower-back involvement.'},
   {id:'l14',nm:'Single-Arm Dumbbell Row',pr:'3 × 8–12 ea',cue:'Upper back + lats. Brace on a bench, row the dumbbell to your hip, squeeze the shoulder blade back at the top. Control the lowering.'},
+  {id:'l16',nm:'Half-kneeling cable row',pr:'3 × 10–12 ea',v:['Left','Right'],cue:'One knee down, low pulley, one arm at a time. Pull the handle to your hip and drive the shoulder blade back — don\'t just bend the elbow. The half-kneeling stance makes your core fight rotation, so stay square. Toggle Left/Right; each side counts as half a set.'},
   {id:'l15',nm:'T-Bar / Lever Row',pr:'3 × 8–12',cue:'Upper-back thickness, machine-supported. Drive elbows back, squeeze shoulder blades together, chest stays on the pad.'},
   {id:'l8',nm:'Incline DB curl',pr:'3 × 8–12',cue:'Biceps peak and stretch. Bench at 45°, arms hang behind you, palms up. The stretch at the bottom does the work. No swinging.'},
   {id:'l9',nm:'Bayesian curl',pr:'3 × 10–15',cue:'Biceps under constant stretch. Stand a step ahead of a low pulley, arm drawn behind your body, palm up. Don\'t let the elbow drift forward.'},
@@ -1571,6 +1573,7 @@ const EX_MUSCLES={
   'chest-supported row':{m:['upperBack'],s:['lats','biceps','rearDelts']},
   'seated cable row':{m:['upperBack'],s:['lats','biceps','rearDelts']}, 'cable row':{m:['upperBack'],s:['lats','biceps']}, 'seated row':{m:['upperBack'],s:['lats','biceps']},
   'single-arm dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'single arm dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'one-arm dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'dumbbell row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'db row':{m:['upperBack'],s:['lats','biceps','forearms']}, 'one arm row':{m:['upperBack'],s:['lats','biceps','forearms']},
+  'half-kneeling cable row':{m:['upperBack'],s:['lats','biceps']}, 'kneeling cable row':{m:['upperBack'],s:['lats','biceps']}, 'half kneeling cable row':{m:['upperBack'],s:['lats','biceps']}, 'single-arm cable row':{m:['upperBack'],s:['lats','biceps']}, 'single arm cable row':{m:['upperBack'],s:['lats','biceps']}, 'one-arm cable row':{m:['upperBack'],s:['lats','biceps']},
   't-bar / lever row':{m:['upperBack'],s:['lats','biceps']}, 't-bar row':{m:['upperBack'],s:['lats','biceps']}, 'tbar row':{m:['upperBack'],s:['lats','biceps']}, 'lever row':{m:['upperBack'],s:['lats','biceps']}, 'machine row':{m:['upperBack'],s:['lats','biceps']}, 'hammer row':{m:['upperBack'],s:['lats','biceps']},
   'incline db curl':{m:['biceps'],s:[]},
   'bayesian curl':{m:['biceps'],s:[]},
