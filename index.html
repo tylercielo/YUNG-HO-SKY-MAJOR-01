@@ -607,7 +607,7 @@
 
   <div class="foot">
     Ten pounds in a year is <b>0.8 lb a month</b>. It will feel like nothing is happening. The log is how you'll know it is.
-    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 21 · landmine press</div>
+    <div style="margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);">build 22 · iso-lateral chest press</div>
   </div>
 </div>
 
@@ -668,6 +668,10 @@ function patchExerciseOptions(){
     if(!pl('landmine press')){
       const spIdx=push.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='seated dumbbell shoulder press');
       push.ex.splice(spIdx>=0?spIdx+1:push.ex.length,0,{id:'p9',nm:'Landmine press',pr:'3 × 8–12',v:['Both','Left','Right'],cue:'Bar in the landmine, press up and slightly forward at an angle. Front delts drive it, upper chest and triceps assist — a shoulder-friendly press with no bar path pinning your shoulders. Toggle Both for two hands, or Left/Right for single-arm (each side = half a set).'});
+    }
+    if(!pl('iso-lateral chest press')){
+      const bbIdx=push.ex.findIndex(e=>(e.nm||'').trim().toLowerCase()==='barbell bench');
+      push.ex.splice(bbIdx>=0?bbIdx+1:push.ex.length,0,{id:'p10',nm:'Iso-lateral chest press',pr:'3 × 8–12',v:['Incline','Flat','Decline'],cue:'Plate-loaded Hammer Strength press, independent arms. Pick the station you\'re on — Incline = upper chest, Flat = mid, Decline = lower. The fixed path lets you push close to failure safely; drive all the way out and control the stretch back.'});
     }
   }
   // give the presses an incline/flat toggle (rename to angle-neutral in existing data)
@@ -873,6 +877,7 @@ const DEFAULT_W=[
  {id:'push',label:'Push',ex:[
   {id:'p1',nm:'Dumbbell press',pr:'4 × 6–10',v:['Incline','Flat'],cue:'Toggle incline or flat. Incline (~30°, not steeper or it becomes a shoulder press) biases upper chest; flat hits it all. Elbows about 45° from your ribs, control the stretch at the bottom.'},
   {id:'p2',nm:'Barbell bench',pr:'3 × 6–10',v:['Flat','Incline'],cue:'Toggle flat or incline. Elbows about 45° from your ribs, bar to lower chest on flat, upper chest on incline. Controlled, full range.'},
+  {id:'p10',nm:'Iso-lateral chest press',pr:'3 × 8–12',v:['Incline','Flat','Decline'],cue:'Plate-loaded Hammer Strength press, independent arms. Pick the station you\'re on — Incline = upper chest, Flat = mid, Decline = lower. The fixed path lets you push close to failure safely; drive all the way out and control the stretch back.'},
   {id:'p3',nm:'Seated dumbbell shoulder press',pr:'3 × 8–12',cue:'Press without arching. Stop just short of locking out.'},
   {id:'p9',nm:'Landmine press',pr:'3 × 8–12',v:['Both','Left','Right'],cue:'Bar in the landmine, press up and slightly forward at an angle. Front delts drive it, upper chest and triceps assist — a shoulder-friendly press with no bar path pinning your shoulders. Toggle Both for two hands, or Left/Right for single-arm (each side = half a set).'},
   {id:'p4',nm:'Cable lateral raise',pr:'4 × 12–20',v:['Lat','Front','Rear'],cue:'Side delts are the width in the taper. Light, slow, high reps, no swing.'},
@@ -1567,6 +1572,7 @@ const EX_MUSCLES={
   'flat barbell bench':{m:['chest'],s:['frontDelts','triceps']},
   'dumbbell press':{m:['chest'],s:['frontDelts','triceps']},
   'barbell bench':{m:['chest'],s:['frontDelts','triceps']},
+  'iso-lateral chest press':{m:['chest'],s:['frontDelts','triceps']}, 'iso lateral chest press':{m:['chest'],s:['frontDelts','triceps']}, 'iso-lateral press':{m:['chest'],s:['frontDelts','triceps']}, 'iso chest press':{m:['chest'],s:['frontDelts','triceps']}, 'iso press':{m:['chest'],s:['frontDelts','triceps']}, 'iso-lateral decline press':{m:['chest'],s:['frontDelts','triceps']}, 'iso-lateral incline press':{m:['chest'],s:['frontDelts','triceps']}, 'hammer strength chest press':{m:['chest'],s:['frontDelts','triceps']}, 'plate loaded chest press':{m:['chest'],s:['frontDelts','triceps']},
   'seated dumbbell shoulder press':{m:['frontDelts'],s:['sideDelts','triceps']},
   'landmine press':{m:['frontDelts'],s:['chestUpper','triceps']}, 'landmine shoulder press':{m:['frontDelts'],s:['chestUpper','triceps']}, 'half-kneeling landmine press':{m:['frontDelts'],s:['chestUpper','triceps']}, 'kneeling landmine press':{m:['frontDelts'],s:['chestUpper','triceps']}, 'one-arm landmine press':{m:['frontDelts'],s:['chestUpper','triceps']}, 'single-arm landmine press':{m:['frontDelts'],s:['chestUpper','triceps']}, 'landmine chest press':{m:['frontDelts'],s:['chestUpper','triceps']},
   'cable lateral raise':{m:['sideDelts'],s:[]},
